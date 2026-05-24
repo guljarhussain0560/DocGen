@@ -1,0 +1,30 @@
+version: "3.9"
+
+services:
+  docgen:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - DATABASE_URL=sqlite+aiosqlite:///./docgen.db
+      - DEBUG=false
+    volumes:
+      - ./generated_docs:/app/generated_docs
+      - ./docgen.db:/app/docgen.db
+    restart: unless-stopped
+
+  # Uncomment for PostgreSQL in production:
+  # postgres:
+  #   image: postgres:16-alpine
+  #   environment:
+  #     POSTGRES_DB: docgen
+  #     POSTGRES_USER: docgen
+  #     POSTGRES_PASSWORD: ${DB_PASSWORD}
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   ports:
+  #     - "5432:5432"
+
+# volumes:
+#   postgres_data:
