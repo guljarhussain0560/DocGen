@@ -18,7 +18,7 @@ export default function Dashboard() {
   const [repoUrl, setRepoUrl] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [stats, setStats] = useState({ indexed: 0, parsing: 0, webhooks: 0 });
-  const [logs, setLogs] = useState<string[]>(['[SYSTEM] INFO: Dashboard initialized.']);
+  const [logs, setLogs] = useState<string[]>([]);
 
   const [isMounted, setIsMounted] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -41,11 +41,6 @@ export default function Dashboard() {
           parsing: projects.filter((p: ProjectData) => p.status === 'scanning').length,
           webhooks: projects.length, // Assume 1 webhook per project
         });
-        
-        // Add log for latest project if available
-        if (projects.length > 0) {
-           setLogs(prev => [...prev, `[${new Date().toISOString()}] DBG: Found ${projects.length} indexed repositories.`]);
-        }
       } catch (e) {
         console.error('Failed to fetch stats', e);
       }
