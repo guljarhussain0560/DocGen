@@ -41,10 +41,18 @@ AsyncSessionLocal = async_sessionmaker(
 async def init_db():
     """Create all tables on startup and run migrations if needed."""
     from sqlalchemy import text
+    from app.models import documentation, project  # noqa: import triggers model registration
+    
+    # 1. Attempt to create tables in a separate transaction.
+    # If another worker is running this concurrently, catch the unique constraint error and proceed.
+    try:
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+    except Exception as e:
+        print(f"[INFO] Table creation skipped or handled concurrently: {e}")
+
+    # 2. Run column migrations and cleanup in a new transaction
     async with engine.begin() as conn:
-        from app.models import documentation, project  # noqa: import triggers model registration
-        await conn.run_sync(Base.metadata.create_all)
-        
         # Add new columns to projects table if they don't exist
         for col_name, col_type in [
             ("status", "VARCHAR(50) DEFAULT 'idle'"),
