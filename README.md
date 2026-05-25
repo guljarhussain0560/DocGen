@@ -20,57 +20,79 @@ Built with **FastAPI** + **Anthropic Claude** (claude-sonnet-4).
 ## Project Structure
 
 ```
-docgen-agent/
-├── main.py                          # FastAPI app entry point
-├── requirements.txt
-├── Dockerfile
-├── docker-compose.yml
-├── .env.example
-│
-├── app/
-│   ├── core/
-│   │   ├── config.py                # Pydantic settings
-│   │   └── database.py              # Async SQLAlchemy setup
-│   │
-│   ├── models/
-│   │   ├── documentation.py         # Documentation ORM model
-│   │   └── project.py               # Project ORM model
-│   │
-│   ├── services/
-│   │   └── ai_service.py            # Claude API integration
-│   │
-│   └── api/routes/
-│       ├── codebase.py              # POST /api/v1/codebase/analyze
-│       ├── api_docs.py              # POST /api/v1/api-docs/generate
-│       ├── pull_requests.py         # POST /api/v1/pull-requests/generate
-│       ├── deployments.py           # POST /api/v1/deployments/generate
-│       └── search.py                # GET  /api/v1/search
+DocGen/
+├── backend/
+│   ├── main.py                     # FastAPI app entry point
+│   ├── requirements.txt            # Python dependencies
+│   ├── Dockerfile                  # Container build config
+│   ├── docker-compose.yml          # Local container orchestration
+│   ├── .env.example                # Template for env variables
+│   ├── app/
+│   │   ├── api/routes/             # API Router endpoints
+│   │   ├── core/                   # Config, DB, and settings
+│   │   ├── models/                 # Database schema models
+│   │   └── services/               # LangGraph/AI pipeline services
+│   └── generated_docs/             # Persisted generated documentation
 │
 └── frontend/
-    └── index.html                   # Dashboard UI
+    ├── src/
+    │   ├── app/                    # Next.js App Router pages
+    │   ├── components/             # Reusable UI components
+    │   └── lib/                    # Axios API configuration
+    ├── package.json                # Node dependencies
+    ├── next.config.ts              # Next.js configurations & API proxies
+    └── tsconfig.json               # TypeScript configurations
 ```
 
 ---
 
 ## Quick Start
 
+### 1. Clone & Set Up environment
 ```bash
-# 1. Clone
 git clone https://github.com/your-org/docgen-agent && cd docgen-agent
+```
 
-# 2. Install
+### 2. Run Backend (FastAPI)
+```bash
+cd backend
+# Create virtual environment and install dependencies
+python -m venv venv
+source venv/Scripts/activate # Windows (or venv/bin/activate on Mac/Linux)
 pip install -r requirements.txt
 
-# 3. Configure
+# Configure settings
 cp .env.example .env
-# Add your ANTHROPIC_API_KEY to .env
+# Edit .env and supply your GROQ_API_KEY and other credentials
 
-# 4. Run
+# Start FastAPI server
 uvicorn main:app --reload --port 8000
 ```
 
-Open http://localhost:8000 for the dashboard.  
-Open http://localhost:8000/api/docs for Swagger UI.
+### 3. Run Frontend (Next.js)
+In a new terminal window:
+```bash
+cd frontend
+# Install Node dependencies
+npm install
+
+# Start Next.js development server
+npm run dev
+```
+
+* **Frontend Dashboard**: Open [http://localhost:3000](http://localhost:3000)
+* **Backend API Docs (Swagger UI)**: Open [http://localhost:8000/api/docs](http://localhost:8000/api/docs)
+
+---
+
+## Run with Docker
+
+To run the consolidated backend and SQLite database using Docker:
+```bash
+cd backend
+docker-compose up --build
+```
+This automatically builds the application container and mounts the local sqlite database and generated documentation directory inside the container for persistence.
 
 ---
 
