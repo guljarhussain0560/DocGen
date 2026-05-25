@@ -12,7 +12,11 @@ const navigation = [
   { name: 'API Docs', href: '/api-docs', icon: BookOpen },
 ];
 
-export default function Sidebar() {
+interface SidebarProps {
+  onSettingsClick: () => void;
+}
+
+export default function Sidebar({ onSettingsClick }: SidebarProps) {
   const pathname = usePathname();
 
   return (
@@ -52,7 +56,10 @@ export default function Sidebar() {
       </div>
 
       <div className="p-2 border-t border-[#30363d]">
-        <button className="flex items-center w-full px-2 py-1.5 text-[#8b949e] rounded hover:bg-[#161b22] hover:text-[#c9d1d9] transition-all duration-200">
+        <button 
+          onClick={onSettingsClick}
+          className="flex items-center w-full px-2 py-1.5 text-[#8b949e] rounded hover:bg-[#161b22] hover:text-[#c9d1d9] transition-all duration-200"
+        >
           <Settings className="mr-2 h-4 w-4" />
           Settings
         </button>

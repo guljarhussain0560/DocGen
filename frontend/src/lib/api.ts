@@ -10,6 +10,17 @@ export const api = axios.create({
   timeout: 30000, // 30s default timeout
 });
 
+// Dynamically override backend URL from localStorage settings if available
+api.interceptors.request.use((config) => {
+  if (typeof window !== 'undefined') {
+    const localUrl = localStorage.getItem('NEXT_PUBLIC_API_URL');
+    if (localUrl) {
+      config.baseURL = `${localUrl}/api/v1`;
+    }
+  }
+  return config;
+});
+
 // API helper functions
 export const getProjects = async () => {
   const response = await api.get('/search/projects');
@@ -96,6 +107,21 @@ export const getProjectPRDocs = async (projectId: string) => {
 
 export const stopScan = async (projectId: string) => {
   const response = await api.post(`/github/stop/${projectId}`);
+  return response.data;
+};
+
+export const getConfig = async () => {
+  const response = await api.get('/search/config');
+  return response.data;
+};
+
+export const updateConfig = async (data: {
+  groq_api_key?: string;
+  ai_model?: string;
+  github_token?: string;
+  github_webhook_secret?: string;
+}) => {
+  const response = await api.post('/search/config', data);
   return response.data;
 };
 

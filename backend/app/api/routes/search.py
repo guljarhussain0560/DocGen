@@ -13,6 +13,8 @@ import uuid
 from app.core.database import get_db
 from app.models.documentation import Documentation
 from app.models.project import Project
+from app.core.config import settings
+import os
 
 router = APIRouter()
 
@@ -192,4 +194,100 @@ async def get_document(doc_id: str, db: AsyncSession = Depends(get_db)):
         "version": doc.version,
         "updated_at": doc.updated_at.isoformat() if doc.updated_at else None,
     }
+
+
+# ------------------------------------------------------------------ #
+#  Settings & Configuration                                          #
+# ------------------------------------------------------------------ #
+
+class ConfigUpdateRequest(BaseModel):
+    groq_api_key: Optional[str] = None
+    ai_model: Optional[str] = None
+    github_token: Optional[str] = None
+    github_webhook_secret: Optional[str] = None
+
+
+def mask_string(s: Optional[str], prefix_len: int = 6) -> str:
+    if not s:
+        return ""
+    if len(s) <= prefix_len:
+        return "*" * len(s)
+    return s[:prefix_len] + "*" * (len(s) - prefix_len)
+
+
+def update_env_file(updates: dict):
+    env_path = ".env"
+    if not os.path.exists(env_path):
+        env_path = os.path.join("backend", ".env")
+        if not os.path.exists(env_path):
+            env_path = "../.env"
+
+    lines = []
+    if os.path.exists(env_path):
+        with open(env_path, "r") as f:
+            lines = f.readlines()
+
+    new_lines = []
+    keys_updated = set()
+    for line in lines:
+        stripped = line.strip()
+        if stripped and not stripped.startswith("#") and "=" in stripped:
+            parts = stripped.split("=", 1)
+            key = parts[0].strip()
+            if key in updates:
+                new_val = updates[key]
+                new_lines.append(f'{key}="{new_val}"\n')
+                keys_updated.add(key)
+                continue
+        new_lines.append(line)
+
+    for key, val in updates.items():
+        if key not in keys_updated:
+            new_lines.append(f'{key}="{val}"\n')
+
+    with open(env_path, "w") as f:
+        f.writelines(new_lines)
+
+
+@router.get("/config", summary="Get current application configuration")
+async def get_config():
+    """Retrieve current environment settings (masked for safety)."""
+    return {
+        "groq_api_key": mask_string(settings.GROQ_API_KEY, 7),
+        "ai_model": settings.AI_MODEL,
+        "github_token": mask_string(settings.GITHUB_TOKEN, 11),
+        "github_webhook_secret": mask_string(settings.GITHUB_WEBHOOK_SECRET, 3),
+        "database_url": settings.DATABASE_URL.split("@")[-1] if "@" in settings.DATABASE_URL else settings.DATABASE_URL
+    }
+
+
+@router.post("/config", summary="Update application settings")
+async def update_config(payload: ConfigUpdateRequest):
+    """Update settings and write them back to the server environment."""
+    updates = {}
+    
+    # Update Groq key if provided and not masked
+    if payload.groq_api_key and not payload.groq_api_key.endswith("*****") and "*" not in payload.groq_api_key:
+        updates["GROQ_API_KEY"] = payload.groq_api_key.strip()
+        settings.GROQ_API_KEY = payload.groq_api_key.strip()
+        
+    # Update AI Model
+    if payload.ai_model:
+        updates["AI_MODEL"] = payload.ai_model.strip()
+        settings.AI_MODEL = payload.ai_model.strip()
+        
+    # Update GitHub Token if provided and not masked
+    if payload.github_token and not payload.github_token.endswith("*****") and "*" not in payload.github_token:
+        updates["GITHUB_TOKEN"] = payload.github_token.strip()
+        settings.GITHUB_TOKEN = payload.github_token.strip()
+        
+    # Update Webhook Secret if provided and not masked
+    if payload.github_webhook_secret and not payload.github_webhook_secret.endswith("*****") and "*" not in payload.github_webhook_secret:
+        updates["GITHUB_WEBHOOK_SECRET"] = payload.github_webhook_secret.strip()
+        settings.GITHUB_WEBHOOK_SECRET = payload.github_webhook_secret.strip()
+
+    if updates:
+        update_env_file(updates)
+            
+    return {"status": "success", "updated": list(updates.keys())}
 
