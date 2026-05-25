@@ -2,7 +2,7 @@
 
 > AI-powered technical documentation that writes itself — from code, APIs, pull requests, and deployments.
 
-Built with **FastAPI** + **Anthropic Claude** (claude-sonnet-4).
+Built with a split **Next.js** (TypeScript) frontend and a **FastAPI** (Python + LangGraph) AI backend.
 
 ---
 
@@ -10,147 +10,79 @@ Built with **FastAPI** + **Anthropic Claude** (claude-sonnet-4).
 
 | Source | Generated Documentation |
 |---|---|
-| Source code files | Module docs, function signatures, usage examples, edge cases |
-| REST API endpoints | Stripe-quality API reference with curl/Python/JS examples |
-| Pull Requests | Changelogs, breaking change analysis, migration guides |
-| Deployments | Runbooks, rollback procedures, release notes, on-call notes |
+| **Source Code Files** | Module docs, function signatures, usage examples, and edge cases. |
+| **REST API Endpoints** | Stripe-quality API reference with curl/Python/JS usage examples. |
+| **Pull Requests** | Changelogs, breaking change analysis, and migration guides. |
+| **Deployments** | Runbooks, rollback procedures, release notes, and on-call notes. |
 
 ---
 
-## Project Structure
+## High-Level Architecture
 
-```
-DocGen/
-├── backend/
-│   ├── main.py                     # FastAPI app entry point
-│   ├── requirements.txt            # Python dependencies
-│   ├── Dockerfile                  # Container build config
-│   ├── docker-compose.yml          # Local container orchestration
-│   ├── .env.example                # Template for env variables
-│   ├── app/
-│   │   ├── api/routes/             # API Router endpoints
-│   │   ├── core/                   # Config, DB, and settings
-│   │   ├── models/                 # Database schema models
-│   │   └── services/               # LangGraph/AI pipeline services
-│   └── generated_docs/             # Persisted generated documentation
-│
-└── frontend/
-    ├── src/
-    │   ├── app/                    # Next.js App Router pages
-    │   ├── components/             # Reusable UI components
-    │   └── lib/                    # Axios API configuration
-    ├── package.json                # Node dependencies
-    ├── next.config.ts              # Next.js configurations & API proxies
-    └── tsconfig.json               # TypeScript configurations
-```
+DocGen is structured as a decoupled monorepo:
+1. **Frontend (Port 3000)**: Next.js App Router SPA. Connects to the backend via a configurable URL or through Next.js proxy rewrites. Includes a custom **GitHub Copilot Chat** UI to query the agent.
+2. **Backend (Port 8000)**: FastAPI server orchestrating directory parsing, SQLite/PostgreSQL storage, and AI generation graphs built using LangGraph.
 
 ---
 
-## Quick Start
+## Quick Start (Run Both Components)
 
-### 1. Clone & Set Up environment
-```bash
-git clone https://github.com/your-org/docgen-agent && cd docgen-agent
-```
+For detailed information on configuring and running each component individually, see their dedicated readmes:
+* 💻 **[Frontend Setup & Configuration](file:///c:/Downloads/DocGen/frontend/README.md)**
+* 🧠 **[Backend Setup & Configuration](file:///c:/Downloads/DocGen/backend/README.md)**
 
-### 2. Run Backend (FastAPI)
+### Option A: Run Locally
+
+#### 1. Start Backend (FastAPI)
 ```bash
 cd backend
-# Create virtual environment and install dependencies
 python -m venv venv
 source venv/Scripts/activate # Windows (or venv/bin/activate on Mac/Linux)
 pip install -r requirements.txt
-
-# Configure settings
-cp .env.example .env
-# Edit .env and supply your GROQ_API_KEY and other credentials
-
-# Start FastAPI server
+cp .env.example .env          # Edit .env and add GROQ_API_KEY
 uvicorn main:app --reload --port 8000
 ```
 
-### 3. Run Frontend (Next.js)
-In a new terminal window:
+#### 2. Start Frontend (Next.js)
+Open a new terminal window:
 ```bash
 cd frontend
-# Install Node dependencies
 npm install
-
-# Start Next.js development server
+cp .env.example .env          # Edit .env and verify NEXT_PUBLIC_API_URL
 npm run dev
 ```
 
-* **Frontend Dashboard**: Open [http://localhost:3000](http://localhost:3000)
-* **Backend API Docs (Swagger UI)**: Open [http://localhost:8000/api/docs](http://localhost:8000/api/docs)
+* **Dashboard Web App**: [http://localhost:3000](http://localhost:3000)
+* **Backend API Docs**: [http://localhost:8000/api/docs](http://localhost:8000/api/docs)
 
 ---
 
-## Run with Docker
+### Option B: Run with Docker Compose
 
-To run the consolidated backend and SQLite database using Docker:
+To orchestrate the backend server and its local database mappings in a Docker environment:
 ```bash
 cd backend
 docker-compose up --build
 ```
-This automatically builds the application container and mounts the local sqlite database and generated documentation directory inside the container for persistence.
-
----
-
-## API Endpoints
-
-### Codebase
-```
-POST /api/v1/codebase/analyze          # Paste code → get docs
-POST /api/v1/codebase/upload           # Upload file → get docs
-POST /api/v1/codebase/detect-outdated  # Diff existing docs vs new code
-GET  /api/v1/codebase/project/{id}     # List all codebase docs
-```
-
-### API Documentation
-```
-POST /api/v1/api-docs/generate         # Single endpoint
-POST /api/v1/api-docs/import-openapi   # Bulk import OpenAPI 3.x spec
-GET  /api/v1/api-docs/project/{id}     # List all API docs
-```
-
-### Pull Requests
-```
-POST /api/v1/pull-requests/generate           # Manual PR doc
-POST /api/v1/pull-requests/webhook/github     # GitHub webhook (auto)
-GET  /api/v1/pull-requests/project/{id}       # List PR docs
-```
-
-### Deployments
-```
-POST /api/v1/deployments/generate      # Generate runbook
-GET  /api/v1/deployments/project/{id}  # List deployment docs
-```
-
-### Search & Projects
-```
-GET  /api/v1/search?q=keyword          # Full-text search
-POST /api/v1/search/projects           # Create project
-GET  /api/v1/search/projects           # List projects
-GET  /api/v1/search/projects/{id}      # Project + all docs
-```
+*Note: This hosts the backend container at `http://localhost:8000` and configures persistent volume folders.*
 
 ---
 
 ## GitHub Webhook Setup
 
-1. Repo → Settings → Webhooks → Add webhook
-2. Payload URL: `https://your-domain.com/api/v1/pull-requests/webhook/github`
-3. Content type: `application/json`
-4. Secret: add to `.env` as `GITHUB_WEBHOOK_SECRET`
-5. Events: select **Pull requests**
+1. Repository → **Settings** → **Webhooks** → **Add webhook**.
+2. **Payload URL**: `https://your-domain.com/api/v1/pull-requests/webhook/github`
+3. **Content type**: `application/json`
+4. **Secret**: Define a value and set it as `GITHUB_WEBHOOK_SECRET` in `backend/.env`.
+5. **Events**: Select **Pull requests**.
 
-Every merged PR will automatically generate a changelog entry and migration guide.
+Every merged PR will automatically generate a changelog entry and migration guide inside the database.
 
 ---
 
-## CI/CD Integration
+## CI/CD Pipeline Integration
 
-Add this step to your deploy pipeline:
+To automatically document deployments, insert this step into your deploy script:
 
 ```yaml
 # GitHub Actions example
@@ -172,22 +104,19 @@ Add this step to your deploy pipeline:
 
 ## Production Notes
 
-- **Database**: Swap SQLite → PostgreSQL (`asyncpg` driver)
-- **Async jobs**: Use Celery + Redis for large codebase analysis
-- **Caching**: Redis cache for repeated file hash lookups
-- **Auth**: Add JWT middleware to protect `/api/v1/*`
-- **Migrations**: Use Alembic for schema evolution
-- **Deploy**: `docker-compose up -d`
+* **Database**: Swap SQLite → PostgreSQL by modifying the `DATABASE_URL` settings in the backend `.env`.
+* **Async Jobs**: For scanning massive repos, offload LangGraph pipelines to Celery + Redis workers.
+* **Auth**: Add token-validation middlewares to protect the backend `/api/v1/*` endpoints.
 
 ---
 
 ## Tech Stack
 
-- **FastAPI** — async REST API framework
-- **SQLAlchemy (async)** — ORM with `aiosqlite` / `asyncpg`
-- **Anthropic Claude** — AI documentation generation (claude-sonnet-4)
-- **Pydantic v2** — request/response validation
-- **Uvicorn + Gunicorn** — ASGI server
+* **Next.js 16** — Client-side React app router framework
+* **FastAPI** — Async Python server
+* **LangGraph** — AI Agent state graph pipeline
+* **Tailwind CSS v4** — High-fidelity global styles
+* **Pydantic v2 & SQLAlchemy** — Server validations and database ORM
 
 ---
 
