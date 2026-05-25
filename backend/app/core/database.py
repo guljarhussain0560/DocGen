@@ -9,6 +9,16 @@ class Base(DeclarativeBase):
     pass
 
 
+import ssl
+
+connect_args = {}
+if "render.com" in settings.DATABASE_URL:
+    # Render requires SSL/TLS for external connections. Use an SSL context that allows connection.
+    ssl_context = ssl.create_default_context()
+    ssl_context.check_hostname = False
+    ssl_context.verify_mode = ssl.CERT_NONE
+    connect_args["ssl"] = ssl_context
+
 engine = create_async_engine(
     settings.DATABASE_URL,
     echo=False,  # Disabled to prevent Windows charmap encoding crashes with Unicode log content
@@ -18,6 +28,7 @@ engine = create_async_engine(
     pool_timeout=30,
     pool_recycle=1800,
     pool_pre_ping=True,
+    connect_args=connect_args,
 )
 
 AsyncSessionLocal = async_sessionmaker(
