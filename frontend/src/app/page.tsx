@@ -87,7 +87,8 @@ export default function Dashboard() {
       }
 
       // Connect to SSE stream for live logs
-      const eventSource = new EventSource(`/api/v1/github/stream/${project.id}`);
+      const apiBase = process.env.NEXT_PUBLIC_API_URL || '';
+      const eventSource = new EventSource(`${apiBase}/api/v1/github/stream/${project.id}`);
       sseRef.current = eventSource;
       eventSource.onmessage = (event) => {
         setLogs(prev => [...prev, `[${new Date().toISOString()}] WORKER: ${event.data}`]);
