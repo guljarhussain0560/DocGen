@@ -6,10 +6,10 @@ import { Home, FolderGit2, BookOpen, MessageSquare, Settings, GitPullRequest } f
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: Home },
-  { name: 'Repositories', href: '/repositories', icon: FolderGit2 },
-  { name: 'API Docs', href: '/api-docs', icon: BookOpen },
   { name: 'Codebase Chat', href: '/chat', icon: MessageSquare },
+  { name: 'Repositories', href: '/repositories', icon: FolderGit2 },
   { name: 'Pull Requests', href: '/pull-requests', icon: GitPullRequest },
+  { name: 'API Docs', href: '/api-docs', icon: BookOpen },
 ];
 
 export default function Sidebar() {
@@ -19,7 +19,7 @@ export default function Sidebar() {
     <div className="flex h-full w-64 flex-col bg-[#0d1117] font-mono text-sm">
       <div className="flex h-14 shrink-0 items-center px-4 border-b border-[#30363d]">
         <div className="flex items-center gap-2">
-          <span className="font-bold text-[#c9d1d9] tracking-tight">DocGen.cli</span>
+          <span className="font-bold text-[#c9d1d9] tracking-tight">DocGen</span>
         </div>
       </div>
       
