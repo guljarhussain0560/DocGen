@@ -1,71 +1,71 @@
-**Project Overview**
-======================
+# Project Overview
+## Tech Stack & Architecture Style
+The project utilizes a modern tech stack, with the primary programming language being **JavaScript**. The main framework employed is **React**, a popular JavaScript library for building user interfaces. The project also leverages **Vite** as the development server and build tool.
 
-### Tech Stack & Architecture Style
+The architecture style is based on a **Modular** approach, with separate directories for different features and components. The project uses a **Component-Driven** architecture, where each component is a self-contained unit of code that represents a UI element.
 
-* **Primary Programming Languages:** JavaScript (ES6+ syntax)
-* **Main Frameworks:** React (for building user interfaces), Vite (for development and build processes)
-* **Database:** None (no explicit database configuration found in the repository)
-* **Libraries:**
-	+ Authentication: `@react-oauth/google` for Google OAuth, `jwt-decode` for token decoding
-	+ UI Components: `@lottiefiles/react-lottie-player`, `framer-motion`, `react-icons`, `react-spinners`, `react-toastify`
-	+ Routing: `react-router-dom`
-	+ Utilities: `axios`, `cors`, `moment`, `react-hook-form`
-* **Design Patterns:** Modular, component-based architecture with separate directories for components, authentication, and pages
+The project dependencies include:
+* **Frontend Frameworks**: React, React DOM
+* **State Management**: React Hook Form
+* **Routing**: React Router DOM
+* **UI Components**: React Icons, Lottie React, React Spinners
+* **Utilities**: Axios, Moment, JWT Decode
+* **Build Tool**: Vite
+* **CSS Framework**: Tailwind CSS (via @tailwindcss/vite)
 
-### Directory Breakdown
+The project does not appear to have a dedicated database, suggesting that it may be using a **Backend-as-a-Service (BaaS)** or a separate backend API.
 
-* **Root Directory:**
+## Directory Breakdown
+The project directory tree is organized into the following structure:
+* **Root Directory**:
 	+ `eslint.config.js`: ESLint configuration file
 	+ `reportWebVitals.js`: Web Vitals reporting script
-	+ `src/`: Source code directory
-* **Source Code Directory (`src/`):**
+	+ `package.json`: Project metadata and dependencies
+* **src Directory**:
 	+ `App.jsx`: Main application component
-	+ `auth/`: Authentication directory
-		- `OAuth2RedirectHandler.jsx`: OAuth redirect handler component
+	+ `auth`: Authentication-related components and services
+		- `OAuth2RedirectHandler.jsx`: OAuth2 redirect handler component
 		- `ResetPassword.jsx`: Reset password component
 		- `SignInPage.jsx`: Sign-in page component
 		- `SignUpPage.jsx`: Sign-up page component
-		- `authService.js`: Authentication service module
-	+ `components/`: UI components directory
+		- `authService.js`: Authentication service
+	+ `components`: Reusable UI components
 		- `Errors.jsx`: Error component
 		- `NotFound.jsx`: Not found component
-		- `aboutPage/`: About page directory
-			- `AboutPage.jsx`: About page component
-		- `contactPage/`: Contact page directory
-			- `ContactPage.jsx`: Contact page component
-		- `footer/`: Footer directory
-			- `Footer.jsx`: Footer component
-		- `pages/`: Pages directory
-			- `Home.jsx`: Home page component
-			- `HomeAfterLogin.jsx`: Home page component after login
-* **Configuration Files:**
-	+ `package.json`: Project configuration file
+		- `aboutPage`: About page components
+		- `contactPage`: Contact page components
+		- `footer`: Footer component
+		- `pages`: Page components (e.g. Home, HomeAfterLogin)
+* **Other Directories**: None
 
-### Core Entrypoints
+## Core Entrypoints
+The application starts with the `App.jsx` component, which is the main entry point. The `App.jsx` component imports other components and services as needed.
 
-* **Main Entry Point:** `src/App.jsx`
-* **Import Chain:**
-	+ `src/App.jsx` imports components from `src/components/` and `src/auth/`
-	+ Components in `src/components/` import utilities from `src/utils/` (not shown in the repository)
-	+ `src/auth/authService.js` imports authentication libraries (`@react-oauth/google`, `jwt-decode`)
+The `index.js` file is not present in the repository, suggesting that the project uses a **Vite**-generated entry point.
 
-### Setup & Dependencies Summary
+The key entry files are:
+* `App.jsx`: Main application component
+* `authService.js`: Authentication service
+* `reportWebVitals.js`: Web Vitals reporting script
 
-* **Environment Variables:** None explicitly mentioned in the repository
-* **Dependencies:**
-	+ **Development Dependencies:**
-		- `@vitejs/plugin-react`: Vite plugin for React
-		- `eslint`: ESLint for code linting
-		- `tailwindcss`: Tailwind CSS for styling
-	+ **Runtime Dependencies:**
-		- `react`: React library
-		- `react-dom`: React DOM library
-		- `react-router-dom`: React Router library
-		- `axios`: Axios library for HTTP requests
-		- `cors`: CORS library for cross-origin resource sharing
-		- `moment`: Moment library for date and time utilities
-		- `react-hook-form`: React Hook Form library for form handling
-		- `react-toastify`: React Toastify library for toast notifications
-		- `tsparticles`: TSParticles library for particle animations
-		- `web-vitals`: Web Vitals library for performance monitoring
+## Setup & Dependencies Summary
+To run the project, the following dependencies are required:
+* **Node.js**: JavaScript runtime environment
+* **Vite**: Development server and build tool
+* **React**: Frontend framework
+* **React DOM**: React DOM library
+* **React Hook Form**: State management library
+* **React Router DOM**: Routing library
+* **Axios**: HTTP client library
+* **Moment**: Date and time library
+* **JWT Decode**: JSON Web Token decoding library
+
+The project also requires the following environment variables:
+* **None**: The project does not appear to require any specific environment variables.
+
+To set up the project, run the following commands:
+* `npm install`: Install dependencies
+* `npm run dev`: Start the development server
+* `npm run build`: Build the project for production
+* `npm run lint`: Run ESLint on the project code
+* `npm run preview`: Preview the built project

@@ -1,29 +1,75 @@
-**Errors Component Documentation**
-=====================================
+# Errors Component Documentation
+## Overview
+The `Errors` component is a reusable UI element designed to display error messages to users when something goes wrong in the application. It is a self-contained unit of code that represents a UI element, following the project's Component-Driven architecture style. The component is located in the `src/components` directory and is imported and used throughout the application as needed.
 
-### Overview
-
-The `Errors` component is a reusable React component designed to display error messages to users when something goes wrong in the application. It provides a simple and consistent way to handle errors, allowing users to navigate back to the previous page.
-
-### Functions/Classes
-
-#### `Errors` Component
-
+## Functions/Classes
+### Errors Component
+#### Signature
 ```javascript
 const Errors = ({ message }) => { ... }
 ```
+#### Parameters
+* `message`: The error message to be displayed to the user. This is a required string parameter.
 
-* **Parameters:**
-	+ `message`: The error message to be displayed (string)
-* **Return Value:** A JSX element representing the error component
-* **Usage Example:**
+#### Return Values
+The `Errors` component returns a JSX element that represents the error message UI.
 
+#### Usage Example
 ```javascript
-import React from 'react';
-import Errors from './Errors';
+import React from "react";
+import Errors from "./Errors";
 
-const MyComponent = () => {
-  const errorMessage = 'Something went wrong!';
+const App = () => {
+  return (
+    <div>
+      <Errors message="An unexpected error occurred." />
+    </div>
+  );
+};
+```
+### onBackHandler Function
+#### Signature
+```javascript
+const onBackHandler = () => { ... }
+```
+#### Parameters
+None
+
+#### Return Values
+None
+
+#### Usage Example
+The `onBackHandler` function is used internally by the `Errors` component to handle the "Go Back" button click event. It is not intended to be used directly by developers.
+
+## Dependencies
+The `Errors` component depends on the following external imports:
+* `React`: The React library is used to build the component's UI.
+* `FiAlertCircle` from `react-icons/fi`: The `FiAlertCircle` icon is used to display a warning symbol.
+* `useNavigate` from `react-router-dom`: The `useNavigate` hook is used to navigate back to the previous page when the "Go Back" button is clicked.
+
+These dependencies are used to provide a visually appealing and functional error message UI.
+
+## Usage Examples
+### Basic Usage
+```javascript
+import React from "react";
+import Errors from "./Errors";
+
+const App = () => {
+  return (
+    <div>
+      <Errors message="An unexpected error occurred." />
+    </div>
+  );
+};
+```
+### Customizing the Error Message
+```javascript
+import React from "react";
+import Errors from "./Errors";
+
+const App = () => {
+  const errorMessage = "A custom error message.";
   return (
     <div>
       <Errors message={errorMessage} />
@@ -31,58 +77,28 @@ const MyComponent = () => {
   );
 };
 ```
-
-#### `onBackHandler` Function
-
+### Using the Errors Component in a React Router Route
 ```javascript
-const onBackHandler = () => {
-  navigate(-1);
-};
-```
+import React from "react";
+import { Route, Routes } from "react-router-dom";
+import Errors from "./Errors";
 
-* **Parameters:** None
-* **Return Value:** None
-* **Usage Example:** (Automatically bound to the "Go Back" button in the `Errors` component)
-
-### Dependencies
-
-* **`react`**: The React library is used to create the component.
-* **`react-icons`**: The `FiAlertCircle` icon is used to display an alert symbol.
-* **`react-router-dom`**: The `useNavigate` hook is used to navigate back to the previous page.
-
-### Usage Examples
-
-```javascript
-import React from 'react';
-import Errors from './Errors';
-
-const MyComponent = () => {
-  const errorMessage = 'Something went wrong!';
+const App = () => {
   return (
-    <div>
-      <Errors message={errorMessage} />
-    </div>
+    <Routes>
+      <Route
+        path="/error"
+        element={
+          <div>
+            <Errors message="An error occurred while navigating to this route." />
+          </div>
+        }
+      />
+    </Routes>
   );
 };
 ```
-
-You can also use the `Errors` component in a more complex scenario, such as in a error boundary component:
-
-```javascript
-import React, { ErrorBoundary } from 'react';
-import Errors from './Errors';
-
-const MyErrorBoundary = () => {
-  return (
-    <ErrorBoundary fallback={<Errors message="An error occurred!" />}>
-      {/* Your components here */}
-    </ErrorBoundary>
-  );
-};
-```
-
-### Edge Cases & Warnings
-
-* Make sure to pass a valid error message as a string to the `Errors` component. If no message is provided, the component will display a default message.
-* The `onBackHandler` function uses the `useNavigate` hook from `react-router-dom` to navigate back to the previous page. If you're using a different routing library, you may need to modify this function accordingly.
-* The `Errors` component assumes that the previous page is the one that the user should navigate back to. If your application has a different navigation flow, you may need to modify the `onBackHandler` function to accommodate this.
+## Edge Cases & Warnings
+* The `Errors` component assumes that the `message` prop is a string. If a non-string value is passed, it may not be displayed correctly.
+* The `onBackHandler` function uses the `useNavigate` hook to navigate back to the previous page. If the user has not navigated to the current page from another page, this function may not work as expected.
+* The `Errors` component uses a fixed height for its container element. If the error message is very long, it may be truncated or overflow the container. Developers should consider using a more dynamic layout or a scrolling container to handle such cases.

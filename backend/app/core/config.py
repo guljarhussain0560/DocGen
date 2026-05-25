@@ -10,9 +10,9 @@ class Settings(BaseSettings):
     APP_VERSION: str = "1.0.0"
     DEBUG: bool = False
 
-    # NVIDIA AI
-    NVIDIA_API_KEY: str = "your-nvidia-api-key"
-    AI_MODEL: str = "meta/llama-3.1-70b-instruct"
+    # Groq AI
+    GROQ_API_KEY: str = "your-groq-api-key"
+    AI_MODEL: str = "qwen/qwen3-32b"
     AI_MAX_TOKENS: int = 4096
 
     # Database (PostgreSQL with asyncpg driver)

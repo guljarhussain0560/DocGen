@@ -18,7 +18,10 @@ export default function Chat() {
   const [projects, setProjects] = useState<any[]>([]);
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
 
+  const [isMounted, setIsMounted] = useState(false);
+
   useEffect(() => {
+    setIsMounted(true);
     const init = async () => {
       try {
         const data = await getProjects();
@@ -35,6 +38,8 @@ export default function Chat() {
     };
     init();
   }, []);
+
+  if (!isMounted) return null;
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,7 +64,12 @@ export default function Chat() {
       }]);
     } catch (e: any) {
       console.error(e);
-      const errorMsg = e.response?.data?.detail || 'Failed to communicate with DocGen backend. Check API status.';
+      let errorMsg: string;
+      if (e.code === 'ECONNABORTED' || e.message?.includes('timeout')) {
+        errorMsg = 'Request timed out. The AI is processing a large context — please try a shorter question or wait and retry.';
+      } else {
+        errorMsg = e.response?.data?.detail || 'Failed to communicate with DocGen backend. Check API status.';
+      }
       setMessages(prev => [...prev, { 
         role: 'assistant', 
         content: `[ERROR] ${errorMsg}` 

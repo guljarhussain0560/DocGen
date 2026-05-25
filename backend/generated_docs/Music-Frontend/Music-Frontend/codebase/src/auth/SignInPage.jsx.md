@@ -1,20 +1,52 @@
-**SignInPage.jsx Documentation**
-=====================================
+**SignInPage Documentation**
+==========================
 
 ### Overview
 
-The `SignInPage.jsx` module is a React component responsible for handling user sign-in functionality. It provides a form for users to enter their username and password, as well as options for Google OAuth sign-in and password reset.
+The `SignInPage` module is a React component that handles user sign-in functionality. It provides a form for users to enter their username and password, and it also includes options for forgot password and Google sign-in. This module plays a crucial role in the system by serving as the primary entry point for users to access the application.
 
 ### Functions/Classes
 
-#### `SignInPage` Component
+#### `handleSignIn` function
 
-* **Signature:** `const SignInPage = () => { ... }`
-* **Parameters:** None
-* **Return Value:** A JSX element representing the sign-in page
-* **Usage Example:**
+*   **Signature:** `async (e: React.FormEvent<HTMLFormElement>) => void`
+*   **Parameters:** `e` - The form event object
+*   **Return Value:** None
+*   **Description:** Handles the sign-in form submission. It calls the `signIn` function from the `authService` module and navigates the user to the home page upon successful sign-in.
+*   **Usage Example:**
 
-```jsx
+```javascript
+const handleSignIn = async (e) => {
+  e.preventDefault();
+  // Sign-in logic here
+};
+```
+
+#### `handleForgotPasswordSubmit` function
+
+*   **Signature:** `async (e: React.FormEvent<HTMLFormElement>) => void`
+*   **Parameters:** `e` - The form event object
+*   **Return Value:** None
+*   **Description:** Handles the forgot password form submission. It sends a request to the server to reset the user's password and displays a success message upon completion.
+*   **Usage Example:**
+
+```javascript
+const handleForgotPasswordSubmit = async (e) => {
+  e.preventDefault();
+  // Forgot password logic here
+};
+```
+
+#### `SignInPage` component
+
+*   **Signature:** `() => JSX.Element`
+*   **Parameters:** None
+*   **Return Value:** The JSX element representing the sign-in page
+*   **Description:** The main component that renders the sign-in page. It includes the sign-in form, forgot password option, and Google sign-in button.
+*   **Usage Example:**
+
+```javascript
+import React from 'react';
 import SignInPage from './SignInPage';
 
 const App = () => {
@@ -26,88 +58,53 @@ const App = () => {
 };
 ```
 
-#### `handleSignIn` Function
-
-* **Signature:** `const handleSignIn = async (e) => { ... }`
-* **Parameters:**
-	+ `e`: The form submission event
-* **Return Value:** None
-* **Usage Example:**
-
-```jsx
-// This function is called when the user submits the sign-in form
-<form onSubmit={handleSignIn}>
-  {/* form fields */}
-</form>
-```
-
-#### `handleForgotPasswordSubmit` Function
-
-* **Signature:** `const handleForgotPasswordSubmit = async (e) => { ... }`
-* **Parameters:**
-	+ `e`: The form submission event
-* **Return Value:** None
-* **Usage Example:**
-
-```jsx
-// This function is called when the user submits the forgot password form
-<form onSubmit={handleForgotPasswordSubmit}>
-  {/* form fields */}
-</form>
-```
-
 ### Dependencies
 
-* **`react`**: The React library is used to build the component.
-* **`react-router-dom`**: The `useNavigate` hook is used to navigate to other routes.
-* **`@react-oauth/google`**: The Google OAuth library is used to handle Google sign-in.
-* **`jwt-decode`**: The JWT decode library is used to decode the JWT token.
-* **`axios`**: The Axios library is used to make API requests.
-* **`cors`**: The CORS library is used to handle CORS issues.
-* **`moment`**: The Moment library is used to handle date and time formatting.
-* **`react-hook-form`**: The React Hook Form library is used to handle form validation.
+The `SignInPage` module depends on the following external imports:
+
+*   `react`: The React library for building user interfaces.
+*   `react-router-dom`: The React Router library for client-side routing.
+*   `authService`: The authentication service module that provides the `signIn` function.
+*   `api`: The API service module that provides functions for making requests to the server.
+*   `FcGoogle`: The Google icon component from the `react-icons` library.
+
+These dependencies are used to handle user authentication, routing, and API requests.
 
 ### Usage Examples
 
-#### Sign-in Form
+Here's an example of how to use the `SignInPage` component in a React application:
 
-```jsx
-<form onSubmit={handleSignIn}>
-  <input type="text" placeholder="Username" value={username} onChange={(e) => setUsername(e.target.value)} />
-  <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
-  <button type="submit">Log In</button>
-</form>
+```javascript
+import React from 'react';
+import SignInPage from './SignInPage';
+
+const App = () => {
+  return (
+    <div>
+      <SignInPage />
+    </div>
+  );
+};
 ```
 
-#### Google Sign-in Button
+To handle forgot password, you can use the `handleForgotPasswordSubmit` function:
 
-```jsx
-<button type="button" onClick={() => {
-  try {
-    // Redirecting the user to the Google OAuth2 login page
-    window.location.href = `${backendDomain}/oauth2/authorization/google`;
-  } catch (err) {
-    console.error('Google SignUp Error:', err);
-    setError(err.message || 'Google signup failed');
-  }
-}}>
-  <FcGoogle size={24} />
-  <span>Continue with Google</span>
-</button>
-```
-
-#### Forgot Password Form
-
-```jsx
-<form onSubmit={handleForgotPasswordSubmit}>
-  <input type="email" placeholder="Enter your email" value={email} onChange={(e) => setEmail(e.target.value)} />
-  <button type="submit">Send Reset Link</button>
-</form>
+```javascript
+const handleForgotPasswordSubmit = async (e) => {
+  e.preventDefault();
+  // Forgot password logic here
+};
 ```
 
 ### Edge Cases & Warnings
 
-* **JWT Token Expiration**: The JWT token has an expiration time. If the token expires, the user will be logged out.
-* **Google OAuth Redirect**: The Google OAuth redirect URL must be configured correctly in the Google Cloud Console.
-* **CORS Issues**: CORS issues may occur if the API endpoint is not configured correctly.
-* **Form Validation**: Form validation is not implemented in this example. You should add form validation to ensure that the user enters valid data.
+*   **Invalid Credentials:** If the user enters invalid credentials, the `handleSignIn` function will catch the error and display an error message.
+*   **Forgot Password:** If the user forgets their password, they can use the forgot password option to reset their password.
+*   **Google Sign-in:** If the user chooses to sign in with Google, the application will redirect them to the Google authentication page.
+*   **Server Errors:** If the server encounters an error while processing the sign-in request, the application will catch the error and display an error message.
+
+When using the `SignInPage` component, make sure to handle the following edge cases:
+
+*   **Invalid Form Data:** Validate the form data to ensure that the user has entered valid credentials.
+*   **Server Errors:** Handle server errors by catching exceptions and displaying error messages to the user.
+*   **Authentication Errors:** Handle authentication errors by displaying error messages to the user and providing options to recover from the error.

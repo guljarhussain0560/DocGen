@@ -31,6 +31,9 @@ router = APIRouter()
 class RepoSubmission(BaseModel):
     project_id: str
     repo_url: str
+    commit_sha: Optional[str] = None
+    since_date: Optional[str] = None
+    until_date: Optional[str] = None
 
 
 @router.post("/analyze-repo", summary="Scan an entire GitHub repository")
@@ -80,7 +83,10 @@ async def analyze_repo(
     # Fire off LangGraph agent pipeline as background task
     background_tasks.add_task(
         run_agent_pipeline,
-        submission.project_id, owner, repo, scan_history_id
+        submission.project_id, owner, repo, scan_history_id,
+        commit_sha=submission.commit_sha,
+        since_date=submission.since_date,
+        until_date=submission.until_date
     )
 
     return {
@@ -150,3 +156,86 @@ async def get_repo_history(
         }
         for s in scans
     ]
+
+
+@router.get("/commits/{project_id}", summary="Get recent commits of project's repository")
+async def get_project_commits(
+    project_id: str,
+    db: AsyncSession = Depends(get_db)
+):
+    """Retrieve the recent commits for the repository configured for the project."""
+    result = await db.execute(select(Project).where(Project.id == project_id))
+    proj = result.scalar_one_or_none()
+    if not proj:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    if not proj.github_repo:
+        raise HTTPException(status_code=400, detail="No GitHub repository configured for this project")
+
+    repo_str = proj.github_repo
+    if "github.com" in repo_str:
+        match = re.match(r"https?://github\.com/([^/]+)/([^/]+)/?", repo_str)
+        if match:
+            owner, repo = match.groups()
+            repo = repo.replace(".git", "")
+        else:
+            raise HTTPException(status_code=400, detail="Invalid GitHub URL format in project settings")
+    else:
+        parts = repo_str.split("/")
+        if len(parts) >= 2:
+            owner, repo = parts[0], parts[1].replace(".git", "")
+        else:
+            raise HTTPException(status_code=400, detail="Invalid GitHub repository structure")
+
+    try:
+        commits = await github_service.get_recent_commits(owner, repo)
+        return commits
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch commits from GitHub: {str(e)}")
+
+
+@router.post("/stop/{project_id}", summary="Stop a running repository scan")
+async def stop_repo_scan(
+    project_id: str,
+    db: AsyncSession = Depends(get_db)
+):
+    """Stop the active LangGraph agent scan for a project."""
+    result = await db.execute(select(Project).where(Project.id == project_id))
+    proj = result.scalar_one_or_none()
+    if not proj:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    if proj.status != "scanning":
+        return {"status": "ignored", "message": "Project is not currently scanning"}
+
+    proj.status = "idle"
+    proj.agent_phase = "Stopped"
+    proj.current_file = None
+    proj.agent_log = (proj.agent_log or "") + f"[{datetime.utcnow().strftime('%H:%M:%S')}] Stop requested by user.\n"
+    await db.commit()
+
+    # Also update active scan history entry to failed/stopped
+    history_result = await db.execute(
+        select(RepoScanHistory)
+        .where(RepoScanHistory.project_id == project_id, RepoScanHistory.status == "scanning")
+    )
+    history = history_result.scalars().all()
+    for h in history:
+        h.status = "failed"
+        h.completed_at = datetime.utcnow()
+    await db.commit()
+
+    # Publish SSE stopped event
+    sse_manager.publish(project_id, {
+        "type": "status",
+        "status": "idle",
+        "progress": proj.progress,
+        "phase": "Stopped",
+        "current_file": None,
+        "log": "Scan stopped by user.",
+        "timestamp": datetime.utcnow().strftime("%H:%M:%S"),
+    })
+
+    return {"status": "stopped", "message": "Scan stop request registered successfully"}
+
+

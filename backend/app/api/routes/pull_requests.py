@@ -16,7 +16,10 @@ import json
 from app.core.database import get_db
 from app.core.config import settings
 from app.models.documentation import Documentation, DocType, DocStatus
+from app.models.project import Project
 from app.services.ai_service import ai_service
+from app.services.github_service import github_service
+import re
 
 router = APIRouter()
 
@@ -161,3 +164,77 @@ async def list_pr_docs(project_id: str, db: AsyncSession = Depends(get_db)):
         }
         for d in docs
     ]
+
+
+@router.get("/list/{project_id}", summary="Get recent pull requests from GitHub")
+async def list_github_pulls(
+    project_id: str,
+    state: str = "open",
+    db: AsyncSession = Depends(get_db),
+):
+    """Retrieve recent pull requests from GitHub for the project's repository."""
+    result = await db.execute(select(Project).where(Project.id == project_id))
+    proj = result.scalar_one_or_none()
+    if not proj:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    if not proj.github_repo:
+        raise HTTPException(status_code=400, detail="No GitHub repository configured for this project")
+
+    repo_str = proj.github_repo
+    if "github.com" in repo_str:
+        match = re.match(r"https?://github\.com/([^/]+)/([^/]+)/?", repo_str)
+        if match:
+            owner, repo = match.groups()
+            repo = repo.replace(".git", "")
+        else:
+            raise HTTPException(status_code=400, detail="Invalid GitHub URL format in project settings")
+    else:
+        parts = repo_str.split("/")
+        if len(parts) >= 2:
+            owner, repo = parts[0], parts[1].replace(".git", "")
+        else:
+            raise HTTPException(status_code=400, detail="Invalid GitHub repository structure")
+
+    try:
+        pulls = await github_service.get_recent_pull_requests(owner, repo, state=state)
+        return pulls
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch pull requests: {str(e)}")
+
+
+@router.get("/details/{project_id}/{pull_number}", summary="Get specific pull request details from GitHub")
+async def get_github_pull_details(
+    project_id: str,
+    pull_number: int,
+    db: AsyncSession = Depends(get_db),
+):
+    """Retrieve details and changed files for a specific pull request from GitHub."""
+    result = await db.execute(select(Project).where(Project.id == project_id))
+    proj = result.scalar_one_or_none()
+    if not proj:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    if not proj.github_repo:
+        raise HTTPException(status_code=400, detail="No GitHub repository configured for this project")
+
+    repo_str = proj.github_repo
+    if "github.com" in repo_str:
+        match = re.match(r"https?://github\.com/([^/]+)/([^/]+)/?", repo_str)
+        if match:
+            owner, repo = match.groups()
+            repo = repo.replace(".git", "")
+        else:
+            raise HTTPException(status_code=400, detail="Invalid GitHub URL format in project settings")
+    else:
+        parts = repo_str.split("/")
+        if len(parts) >= 2:
+            owner, repo = parts[0], parts[1].replace(".git", "")
+        else:
+            raise HTTPException(status_code=400, detail="Invalid GitHub repository structure")
+
+    try:
+        details = await github_service.get_pull_request_details(owner, repo, pull_number)
+        return details
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch pull request details: {str(e)}")

@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 
 @theme {
   --color-background: var(--background);
@@ -20,6 +21,21 @@
   ::backdrop,
   ::file-selector-button {
     border-color: var(--color-gray-200, currentColor);
+  }
+
+  button,
+  [role="button"],
+  select,
+  summary,
+  a {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  [role="button"]:disabled,
+  select:disabled,
+  a:disabled {
+    cursor: not-allowed;
   }
 }
 
@@ -74,3 +90,61 @@ body {
   color: rgba(255, 255, 255, 0.5);
   opacity: 0.6;
 }
+
+/* GitHub Style Buttons */
+.github-btn-primary {
+  background-color: #238636;
+  color: #ffffff;
+  border: 1px solid rgba(240, 246, 252, 0.1);
+  border-radius: 6px;
+  font-weight: 500;
+  transition: background-color 0.2s;
+  cursor: pointer;
+}
+.github-btn-primary:hover:not(:disabled) {
+  background-color: #2ea043;
+}
+.github-btn-primary:disabled {
+  background-color: #238636;
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.github-btn-secondary {
+  background-color: #21262d;
+  color: #c9d1d9;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  font-weight: 500;
+  transition: background-color 0.2s, border-color 0.2s;
+  cursor: pointer;
+}
+.github-btn-secondary:hover:not(:disabled) {
+  background-color: #30363d;
+  border-color: #8b949e;
+}
+.github-btn-secondary:disabled {
+  background-color: #21262d;
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.github-btn-danger {
+  background-color: #21262d;
+  color: #f85149;
+  border: 1px solid rgba(248, 81, 73, 0.4);
+  border-radius: 6px;
+  font-weight: 500;
+  transition: background-color 0.2s, border-color 0.2s;
+  cursor: pointer;
+}
+.github-btn-danger:hover:not(:disabled) {
+  background-color: rgba(248, 81, 73, 0.15);
+  border-color: #f85149;
+}
+.github-btn-danger:disabled {
+  background-color: #21262d;
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+

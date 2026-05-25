@@ -11,7 +11,7 @@ export default function ApiDocs() {
 
       <div className="flex-1 tech-panel flex flex-col overflow-hidden shadow-lg bg-white">
         <iframe 
-          src="http://localhost:8000/api/docs" 
+          src="/api/docs" 
           className="w-full h-full border-none"
           title="FastAPI Swagger UI"
         />

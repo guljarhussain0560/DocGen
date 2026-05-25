@@ -1,0 +1,15 @@
+version: "3.9"
+
+services:
+  docgen:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - DATABASE_URL=sqlite+aiosqlite:///./docgen.db
+      - DEBUG=false
+    volumes:
+      - ./generated_docs:/app/generated_docs
+      - ./docgen.db:/app/docgen.db
+    restart: unless-stopped

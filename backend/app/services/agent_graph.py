@@ -43,6 +43,9 @@ class AgentState(TypedDict, total=False):
     overview_markdown: str
     docs_count: int
     error: Optional[str]
+    commit_sha: Optional[str]
+    since_date: Optional[str]
+    until_date: Optional[str]
 
 
 # ── Helper Functions ─────────────────────────────────────────────────── #
@@ -53,7 +56,11 @@ async def _update_db_status(project_id: str, status: str, progress: int, phase: 
         result = await db.execute(select(Project).where(Project.id == project_id))
         proj = result.scalar_one_or_none()
         if proj:
-            proj.status = status
+            if proj.status != "scanning" and status == "scanning":
+                # Keep the user's stopped/idle status, do not reset to scanning
+                pass
+            else:
+                proj.status = status
             proj.progress = progress
             proj.agent_phase = phase
             proj.current_file = current_file
@@ -90,22 +97,47 @@ async def _write_to_disk(project_name: str, repo: str, filepath: str, content: s
 
 
 async def _save_doc(project_id: str, title: str, doc_type: DocType, source_ref: str, markdown: str, summary: str) -> str:
-    """Persist a Documentation record and return its ID."""
-    doc_id = str(uuid.uuid4())
+    """Persist a Documentation record (updates if source_ref exists, otherwise inserts)."""
     async with AsyncSessionLocal() as db:
-        doc = Documentation(
-            id=doc_id,
-            project_id=project_id,
-            title=title,
-            doc_type=doc_type,
-            status=DocStatus.COMPLETED,
-            source_ref=source_ref,
-            content_markdown=markdown,
-            ai_summary=summary,
+        from sqlalchemy import and_
+        result = await db.execute(
+            select(Documentation)
+            .where(and_(Documentation.project_id == project_id, Documentation.source_ref == source_ref))
         )
-        db.add(doc)
+        doc = result.scalar_one_or_none()
+        
+        if doc:
+            doc.title = title
+            doc.doc_type = doc_type
+            doc.content_markdown = markdown
+            doc.ai_summary = summary
+            doc.status = DocStatus.COMPLETED
+            doc.updated_at = datetime.utcnow()
+            doc_id = doc.id
+        else:
+            doc_id = str(uuid.uuid4())
+            doc = Documentation(
+                id=doc_id,
+                project_id=project_id,
+                title=title,
+                doc_type=doc_type,
+                status=DocStatus.COMPLETED,
+                source_ref=source_ref,
+                content_markdown=markdown,
+                ai_summary=summary,
+            )
+            db.add(doc)
         await db.commit()
     return doc_id
+
+
+async def _is_stopped(project_id: str) -> bool:
+    """Check if the scan has been stopped by the user."""
+    async with AsyncSessionLocal() as db:
+        result = await db.execute(select(Project).where(Project.id == project_id))
+        proj = result.scalar_one_or_none()
+        return not proj or proj.status != "scanning"
+
 
 
 # ── LangGraph Node Functions ────────────────────────────────────────── #
@@ -113,12 +145,50 @@ async def _save_doc(project_id: str, title: str, doc_type: DocType, source_ref: 
 async def discovery_node(state: AgentState) -> AgentState:
     """Phase 1: Fetch repo tree, filter files, build file list."""
     pid = state["project_id"]
+    if await _is_stopped(pid):
+        state["phase"] = "completed"
+        return state
     owner, repo = state["owner"], state["repo"]
 
     await _update_db_status(pid, "scanning", 5, "Discovery", "Initializing agentic scan...")
     await _update_db_status(pid, "scanning", 10, "Discovery", "Scanning remote codebase tree structure...")
 
     files = await github_service.get_repo_tree(owner, repo)
+
+    commit_sha = state.get("commit_sha")
+    since_date = state.get("since_date")
+    until_date = state.get("until_date")
+
+    changed_paths = None
+    removed_paths = set()
+    if commit_sha:
+        await _update_db_status(pid, "scanning", 10, "Discovery", f"Fetching changes for commit {commit_sha[:8]}...")
+        try:
+            changes = await github_service.get_commit_changes(owner, repo, commit_sha)
+            changed_paths = {c["path"] for c in changes}
+            removed_paths = {c["path"] for c in changes if c["status"] == "removed"}
+        except Exception as e:
+            await _update_db_status(pid, "scanning", 10, "Discovery", f"[WARN] Failed to fetch commit changes: {e}")
+    elif since_date or until_date:
+        await _update_db_status(pid, "scanning", 10, "Discovery", "Fetching changes within date range...")
+        try:
+            changes = await github_service.get_date_range_changes(owner, repo, since_date, until_date)
+            changed_paths = {c["path"] for c in changes}
+            removed_paths = {c["path"] for c in changes if c["status"] == "removed"}
+        except Exception as e:
+            await _update_db_status(pid, "scanning", 10, "Discovery", f"[WARN] Failed to fetch date range changes: {e}")
+
+    # Remove documentation records for deleted files
+    if removed_paths:
+        async with AsyncSessionLocal() as db:
+            from sqlalchemy import delete
+            await db.execute(
+                delete(Documentation)
+                .where(Documentation.project_id == pid)
+                .where(Documentation.source_ref.in_(list(removed_paths)))
+            )
+            await db.commit()
+        await _update_db_status(pid, "scanning", 12, "Discovery", f"Removed documentation for {len(removed_paths)} deleted files.")
 
     valid_extensions = {".py", ".js", ".ts", ".jsx", ".tsx", ".go", ".rs", ".java", ".cpp", ".c", ".h", ".rb", ".php", ".cs", ".swift", ".kt", ".scala", ".vue", ".svelte"}
     dependency_basenames = {"requirements.txt", "package.json", "go.mod", "Cargo.toml", "setup.py", "Pipfile", "Makefile", "pyproject.toml", "pom.xml", "build.gradle", "composer.json", "Gemfile"}
@@ -132,6 +202,11 @@ async def discovery_node(state: AgentState) -> AgentState:
         path_lower = path.lower()
         if any(pat in path_lower for pat in exclude_patterns):
             continue
+
+        # If running an incremental scan, only process changed files
+        if changed_paths is not None and path not in changed_paths:
+            continue
+
         basename = path.split("/")[-1]
         if basename in dependency_basenames:
             dependency_files.append(f)
@@ -147,13 +222,13 @@ async def discovery_node(state: AgentState) -> AgentState:
     await _update_db_status(pid, "scanning", 15, "Discovery",
                             f"Found {len(main_coding_files)} coding files and {len(dependency_files)} dependency files.")
 
-    # Read dependency configs
+    # Read dependency configs (limit to first 5 config files and 800 chars to avoid rate limits)
     configs_str = ""
-    for f in dependency_files:
+    for f in dependency_files[:5]:
         path = f.get("path", "")
         content = await github_service.get_file_content(owner, repo, path)
         if content:
-            configs_str += f"\nFile: {path}\n```\n{content[:2000]}\n```\n"
+            configs_str += f"\nFile: {path}\n```\n{content[:800]}\n```\n"
 
     state["file_tree_str"] = file_tree_str
     state["main_coding_files"] = main_coding_files
@@ -166,6 +241,14 @@ async def discovery_node(state: AgentState) -> AgentState:
 async def overview_node(state: AgentState) -> AgentState:
     """Phase 2: Generate project overview document."""
     pid = state["project_id"]
+    if await _is_stopped(pid):
+        state["phase"] = "completed"
+        return state
+    if state.get("commit_sha") or state.get("since_date") or state.get("until_date"):
+        await _update_db_status(pid, "scanning", 25, "Overview", "Skipping project overview for incremental scan.")
+        state["phase"] = "architecture"
+        return state
+
     await _update_db_status(pid, "scanning", 20, "Overview", "Generating high-level project overview...")
 
     overview_res = await ai_service.generate_project_overview(state["file_tree_str"], state["configs_str"])
@@ -185,6 +268,14 @@ async def overview_node(state: AgentState) -> AgentState:
 async def architecture_node(state: AgentState) -> AgentState:
     """Phase 3: Generate system architecture guide."""
     pid = state["project_id"]
+    if await _is_stopped(pid):
+        state["phase"] = "completed"
+        return state
+    if state.get("commit_sha") or state.get("since_date") or state.get("until_date"):
+        await _update_db_status(pid, "scanning", 35, "Architecture", "Skipping architecture guide for incremental scan.")
+        state["phase"] = "dependencies"
+        return state
+
     await _update_db_status(pid, "scanning", 30, "Architecture", "Mapping system architecture & generating diagrams...")
 
     arch_res = await ai_service.generate_system_architecture(
@@ -205,6 +296,13 @@ async def architecture_node(state: AgentState) -> AgentState:
 async def dependency_node(state: AgentState) -> AgentState:
     """Phase 4: Analyze dependency files (conditional — skipped if none)."""
     pid = state["project_id"]
+    if await _is_stopped(pid):
+        state["phase"] = "completed"
+        return state
+    if state.get("commit_sha") or state.get("since_date") or state.get("until_date"):
+        await _update_db_status(pid, "scanning", 45, "Dependencies", "Skipping dependency analysis for incremental scan.")
+        state["phase"] = "documenting"
+        return state
 
     if not state["configs_str"]:
         await _update_db_status(pid, "scanning", 48, "Dependencies", "No dependency files found - skipping.")
@@ -242,9 +340,13 @@ async def documenting_node(state: AgentState) -> AgentState:
                             f"Starting documentation for {total} coding files...")
 
     for idx, file_node in enumerate(main_files):
-        path = file_node["path"]
         progress = 50 + int((idx / total) * 35)
-
+        if await _is_stopped(pid):
+            await _update_db_status(pid, "idle", progress, "Documenting", "Scan stopped by user.")
+            state["phase"] = "completed"
+            return state
+        path = file_node["path"]
+        
         await _update_db_status(pid, "scanning", progress, "Documenting",
                                 f"Analyzing: {path}", current_file=path)
 
@@ -293,6 +395,9 @@ async def documenting_node(state: AgentState) -> AgentState:
 async def api_extraction_node(state: AgentState) -> AgentState:
     """Phase 6: Generate API reference if web project detected."""
     pid = state["project_id"]
+    if await _is_stopped(pid):
+        state["phase"] = "completed"
+        return state
     await _update_db_status(pid, "scanning", 90, "API Extraction",
                             "Checking for web project patterns...", current_file="API Reference")
 
@@ -369,7 +474,12 @@ async def completion_node(state: AgentState) -> AgentState:
 
 # ── Pipeline Orchestrator ──────────────────────────────────────────── #
 
-async def run_agent_pipeline(project_id: str, owner: str, repo: str, scan_history_id: str):
+async def run_agent_pipeline(
+    project_id: str, owner: str, repo: str, scan_history_id: str,
+    commit_sha: Optional[str] = None,
+    since_date: Optional[str] = None,
+    until_date: Optional[str] = None
+):
     """
     Execute the full LangGraph-style documentation agent pipeline.
     Uses a sequential state machine with conditional edges.
@@ -400,6 +510,9 @@ async def run_agent_pipeline(project_id: str, owner: str, repo: str, scan_histor
         "overview_markdown": "",
         "docs_count": 0,
         "error": None,
+        "commit_sha": commit_sha,
+        "since_date": since_date,
+        "until_date": until_date,
     }
 
     # Define the pipeline as an ordered node sequence

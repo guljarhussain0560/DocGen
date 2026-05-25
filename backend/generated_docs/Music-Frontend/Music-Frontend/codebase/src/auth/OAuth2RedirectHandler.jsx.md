@@ -1,18 +1,15 @@
-**OAuth2RedirectHandler**
-==========================
+OAuth2 Redirect Handler Documentation
+=====================================
 
-### Overview
+### 1. Overview
 
-The `OAuth2RedirectHandler` component is responsible for handling the redirect from an OAuth2 authorization server after a user has authenticated. It retrieves the authorization token from the URL query parameters, stores it in local storage, and uses it to fetch the user's details from the backend API. If the fetch is successful, it redirects the user to the home page; otherwise, it redirects to the login page with an error message.
+The `OAuth2RedirectHandler` component is responsible for handling the redirect from an OAuth2 authentication flow. It extracts the authentication token from the URL query parameters, stores it in local storage, and uses it to fetch the logged-in user's details from the backend API. If the token is valid, it redirects the user to the home page; otherwise, it redirects to the login page with an error message.
 
-### Functions/Classes
+### 2. Functions/Classes
 
 #### `OAuth2RedirectHandler` Component
 
-```javascript
-const OAuth2RedirectHandler = () => { ... }
-```
-
+*   **Signature:** `const OAuth2RedirectHandler = () => { ... }`
 *   **Parameters:** None
 *   **Return Value:** A JSX element displaying a loading message or a redirecting message
 *   **Usage Example:**
@@ -31,13 +28,9 @@ const App = () => {
 
 #### `useEffect` Hook
 
-```javascript
-useEffect(() => { ... }, [navigate]);
-```
-
+*   **Signature:** `useEffect(() => { ... }, [navigate])`
 *   **Parameters:**
-    *   A function to execute when the component mounts or updates
-    *   An array of dependencies (in this case, the `navigate` function from `react-router-dom`)
+    *   `navigate`: A function from `react-router-dom` to navigate to different routes
 *   **Return Value:** None
 *   **Usage Example:**
 
@@ -49,45 +42,62 @@ const MyComponent = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Execute this code when the component mounts or updates
+    // Perform some side effect when the component mounts
+    navigate('/home');
   }, [navigate]);
 
   return <div>My Component</div>;
 };
 ```
 
-### Dependencies
+### 3. Dependencies
 
-*   `react`: For building user interfaces and managing state
-*   `react-router-dom`: For client-side routing and navigation
-*   `@react-oauth/google`: For Google OAuth authentication (not used directly in this component, but part of the overall authentication flow)
-*   `jwt-decode`: For decoding JSON Web Tokens (not used directly in this component, but part of the overall authentication flow)
-*   `axios`: For making HTTP requests to the backend API
-*   `cors`: For handling Cross-Origin Resource Sharing (not used directly in this component, but part of the overall API configuration)
-*   `moment`: For working with dates and times (not used directly in this component, but part of the overall project dependencies)
-*   `react-hook-form`: For managing form state and validation (not used directly in this component, but part of the overall project dependencies)
+The `OAuth2RedirectHandler` component depends on the following external imports:
 
-### Usage Examples
+*   `react`: The React library for building user interfaces
+*   `react-router-dom`: The React Router library for client-side routing
+*   `api`: A custom API service for making requests to the backend API
+*   `import.meta.env.VITE_BACKEND_DOMAIN`: An environment variable containing the backend domain URL
+*   `localStorage`: The Web Storage API for storing data locally in the browser
 
-To use the `OAuth2RedirectHandler` component, simply import it and render it in your application:
+These dependencies are used to:
+
+*   Handle client-side routing and navigation
+*   Make requests to the backend API to fetch user details
+*   Store authentication tokens and user details in local storage
+
+### 4. Usage Examples
+
+Here's an example of how to use the `OAuth2RedirectHandler` component in a React application:
 
 ```javascript
+import React from 'react';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import OAuth2RedirectHandler from './OAuth2RedirectHandler';
 
 const App = () => {
   return (
-    <div>
-      <OAuth2RedirectHandler />
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/oauth2/redirect" element={<OAuth2RedirectHandler />} />
+        <Route path="/home" element={<div>Home Page</div>} />
+        <Route path="/login" element={<div>Login Page</div>} />
+      </Routes>
+    </BrowserRouter>
   );
 };
 ```
 
-Make sure to configure the `backendDomain` environment variable and the `CSRF_TOKEN` local storage item for the component to work correctly.
+### 5. Edge Cases & Warnings
 
-### Edge Cases & Warnings
+*   **Missing Token:** If the `token` query parameter is missing from the URL, the component will redirect to the login page with an error message.
+*   **Invalid Token:** If the `token` is invalid or expired, the backend API will return an error response, and the component will redirect to the login page with an error message.
+*   **CSRF Token Mismatch:** If the CSRF token stored in local storage does not match the one expected by the backend API, the request will fail, and the component will redirect to the login page with an error message.
+*   **Backend API Errors:** If the backend API returns an error response, the component will catch the error and redirect to the login page with an error message.
 
-*   **Token Validation:** The component assumes that the token received from the authorization server is valid and can be used to fetch the user's details from the backend API. However, in a real-world scenario, you should validate the token before using it to ensure its authenticity and integrity.
-*   **Error Handling:** The component redirects to the login page with an error message if the user fetch fails. However, you may want to handle errors more robustly, such as by displaying an error message to the user or logging the error for debugging purposes.
-*   **Security:** The component stores the authorization token in local storage, which may not be secure in all scenarios. Consider using a more secure storage mechanism, such as a cookie with the `Secure` and `HttpOnly` flags set.
-*   **CSRF Protection:** The component uses a CSRF token to protect against cross-site request forgery attacks. However, you should ensure that the CSRF token is properly validated on the backend to prevent attacks.
+To avoid these edge cases, ensure that:
+
+*   The `token` query parameter is properly set in the URL
+*   The `token` is valid and not expired
+*   The CSRF token is properly stored in local storage and matches the one expected by the backend API
+*   The backend API is properly configured and returns valid responses

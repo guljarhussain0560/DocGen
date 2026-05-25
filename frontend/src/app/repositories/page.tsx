@@ -1,14 +1,18 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { FolderGit2, CheckCircle2, Clock, GitPullRequest, ArrowUpRight } from 'lucide-react';
+import { FolderGit2, CheckCircle2, Clock } from 'lucide-react';
 import { getProjects } from '@/lib/api';
+import { useRouter } from 'next/navigation';
 
 export default function Repositories() {
+  const router = useRouter();
   const [projects, setProjects] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
+    setIsMounted(true);
     const fetchProjects = async () => {
       try {
         const data = await getProjects();
@@ -22,6 +26,8 @@ export default function Repositories() {
     };
     fetchProjects();
   }, []);
+
+  if (!isMounted) return null;
 
   return (
     <div className="space-y-6">
@@ -45,9 +51,9 @@ export default function Repositories() {
               <tr>
                 <th className="px-4 py-2 font-medium">Repository</th>
                 <th className="px-4 py-2 font-medium">Status</th>
-                <th className="px-4 py-2 font-medium">HEAD Commit</th>
-                <th className="px-4 py-2 font-medium text-right">Active PRs</th>
-                <th className="px-4 py-2 font-medium text-right">Last Sync</th>
+                <th className="px-4 py-2 font-medium">GitHub Repo</th>
+                <th className="px-4 py-2 font-medium text-right">Docs</th>
+                <th className="px-4 py-2 font-medium text-right">Created</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#30363d]">
@@ -59,21 +65,37 @@ export default function Repositories() {
                 </tr>
               ) : (
                 projects.map((repo, i) => (
-                  <tr key={i} className="hover:bg-[#161b22] transition-colors cursor-pointer group">
+                  <tr 
+                    key={i} 
+                    onClick={() => router.push(`/repositories/${repo.id}`)}
+                    className="hover:bg-[#161b22] transition-colors cursor-pointer group"
+                  >
                     <td className="px-4 py-3 font-medium text-[#c9d1d9] group-hover:text-[#58a6ff] transition-colors flex items-center gap-2">
                       <FolderGit2 className="w-4 h-4 text-[#8b949e]" />
                       {repo.name}
                     </td>
                     <td className="px-4 py-3">
                       {repo.status === 'completed' ? (
-                        <span className="text-[#3fb950] flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5" /> Ready</span>
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#2ea043]/15 text-[#3fb950] border border-[#238636]/30">
+                          Ready
+                        </span>
+                      ) : repo.status === 'scanning' ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#a371f7]/15 text-[#d2a8ff] border border-[#8957e5]/30 animate-pulse">
+                          Scanning
+                        </span>
+                      ) : repo.status === 'failed' ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#da3633]/15 text-[#f85149] border border-[#da3633]/30">
+                          Failed
+                        </span>
                       ) : (
-                        <span className="text-[#d2a8ff] flex items-center gap-1.5 animate-pulse"><Clock className="w-3.5 h-3.5" /> Syncing</span>
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#30363d]/30 text-[#8b949e] border border-[#30363d]">
+                          {repo.status ? (repo.status.charAt(0).toUpperCase() + repo.status.slice(1)) : 'Idle'}
+                        </span>
                       )}
                     </td>
-                    <td className="px-4 py-3 font-mono text-[#8b949e]">{repo.commit || 'unknown'}</td>
-                    <td className="px-4 py-3 text-right text-[#8b949e]">{repo.prs || 0}</td>
-                    <td className="px-4 py-3 text-right text-[#8b949e]">{repo.lastSync || 'Never'}</td>
+                    <td className="px-4 py-3 font-mono text-[#8b949e]">{repo.github_repo || '—'}</td>
+                    <td className="px-4 py-3 text-right text-[#8b949e]">{repo.doc_count ?? 0}</td>
+                    <td className="px-4 py-3 text-right text-[#8b949e]">{repo.created_at ? new Date(repo.created_at).toLocaleDateString() : '—'}</td>
                   </tr>
                 ))
               )}

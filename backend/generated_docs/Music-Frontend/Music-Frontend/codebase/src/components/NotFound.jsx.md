@@ -1,19 +1,18 @@
 **NotFound Component Documentation**
 =====================================
 
-### Overview
+### 1. Overview
 
-The `NotFound` component is a React functional component that displays a 404 error page when a user navigates to a non-existent route. It is a part of the `components` directory in the project and is used to handle cases where the requested page is not found.
+The `NotFound` component is a reusable UI element that displays a "404 Not Found" page to users when they navigate to a non-existent route. It is a self-contained unit of code that represents a UI element, following the project's Component-Driven architecture style. The component is located in the `src/components` directory and is used throughout the application to handle invalid routes.
 
-### Functions/Classes
+### 2. Functions/Classes
 
 #### `NotFound` Component
 
 * **Signature:** `const NotFound = () => { ... }`
 * **Parameters:** None
-* **Return Value:** A JSX element representing the 404 error page
+* **Return Value:** A JSX element representing the "404 Not Found" page
 * **Usage Example:**
-
 ```javascript
 import React from "react";
 import NotFound from "./NotFound";
@@ -27,15 +26,20 @@ const App = () => {
 };
 ```
 
-### Dependencies
+### 3. Dependencies
 
-* **`React`**: The `NotFound` component uses React to render the JSX element.
+The `NotFound` component depends on the following external imports:
+
+* **`React`**: The React library is used to create the component and render the JSX element.
 * **`Link` from `react-router-dom`**: The `Link` component is used to create a link to the homepage.
 
-### Usage Examples
+These dependencies are used to create a functional component that can be used throughout the application.
 
-To use the `NotFound` component, simply import it and render it in your React application:
+### 4. Usage Examples
 
+Here are some examples of how to use the `NotFound` component:
+
+* **Basic Usage:**
 ```javascript
 import React from "react";
 import NotFound from "./NotFound";
@@ -49,27 +53,26 @@ const App = () => {
 };
 ```
 
-You can also use the `NotFound` component as a fallback route in your React Router configuration:
-
+* **Usage with React Router:**
 ```javascript
 import React from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Route, Switch } from "react-router-dom";
 import NotFound from "./NotFound";
 
 const App = () => {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+      <Switch>
+        <Route path="/" exact component={Home} />
+        <Route component={NotFound} />
+      </Switch>
     </BrowserRouter>
   );
 };
 ```
 
-### Edge Cases & Warnings
+### 5. Edge Cases & Warnings
 
-* **Customization:** The `NotFound` component uses Tailwind CSS classes for styling. If you want to customize the appearance of the component, you can modify the CSS classes or add your own styles.
-* **Routing:** Make sure to configure your React Router correctly to handle cases where the requested page is not found. The `NotFound` component should be used as a fallback route to handle such cases.
-* **Server-Side Rendering:** If you're using server-side rendering, make sure to handle the case where the requested page is not found on the server-side as well. The `NotFound` component is designed for client-side rendering, but you can modify it to work with server-side rendering if needed.
+* **Customization:** The `NotFound` component uses Tailwind CSS classes for styling. If you want to customize the appearance of the component, you can override these classes or add your own custom styles.
+* **Routing:** Make sure to configure your React Router setup to render the `NotFound` component when a non-existent route is navigated to.
+* **Server-Side Rendering:** If you're using server-side rendering, make sure to handle the case where the `NotFound` component is rendered on the server. You may need to add additional logic to handle this case.

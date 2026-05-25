@@ -1,91 +1,92 @@
-**Dependency & Package Analysis Guide**
+Dependency & Package Analysis Guide
 =====================================
 
-**Table of Contents**
------------------
+### Table of Contents
 
 1. [Third-Party Libraries Breakdown](#third-party-libraries-breakdown)
-2. [Security & Version Assessment](#security-version-assessment)
+2. [Security & Version Assessment](#security--version-assessment)
 3. [Environment Setup Requirements](#environment-setup-requirements)
 
-**Third-Party Libraries Breakdown**
----------------------------------
+### Third-Party Libraries Breakdown
+The project utilizes the following third-party libraries:
 
-### Core Frameworks
+#### Core Frameworks
+* **React**: A JavaScript library for building user interfaces (`^18.2.0`)
+* **React DOM**: A package for working with the DOM in React (`^18.2.0`)
 
-* **React**: `^18.2.0` - A JavaScript library for building user interfaces.
-* **Vite**: `^6.2.0` - A build tool for modern web applications.
+#### Libraries
+* **@lottiefiles/react-lottie-player**: A React component for playing Lottie animations (`^3.6.0`)
+* **@react-oauth/google**: A library for Google OAuth authentication in React (`^0.12.1`)
+* **@tailwindcss/vite**: A plugin for using Tailwind CSS with Vite (`^4.1.3`)
+* **axios**: A library for making HTTP requests (`^1.8.4`)
+* **framer-motion**: A library for animations and gestures (`^12.9.4`)
+* **jwt-decode**: A library for decoding JSON Web Tokens (`^4.0.0`)
+* **lottie-react**: A React component for playing Lottie animations (`^2.4.1`)
+* **moment**: A library for working with dates and times (`^2.30.1`)
+* **react-hook-form**: A library for managing forms in React (`^7.56.1`)
+* **react-hot-toast**: A library for displaying toast notifications (`^2.5.2`)
+* **react-icons**: A library for using icons in React (`^5.5.0`)
+* **react-router-dom**: A library for client-side routing in React (`^7.5.0`)
+* **react-spinners**: A library for displaying loading spinners (`^0.17.0`)
+* **react-toastify**: A library for displaying toast notifications (`^11.0.5`)
+* **react-tsparticles**: A library for displaying particle animations (`^2.12.2`)
 
-### Libraries
+#### Utilities
+* **cors**: A library for enabling CORS in Express.js (`^2.8.5`)
 
-* **@lottiefiles/react-lottie-player**: `^3.6.0` - A React component for playing Lottie animations.
-* **@react-oauth/google**: `^0.12.1` - A React library for Google OAuth authentication.
-* **axios**: `^1.8.4` - A promise-based HTTP client for making requests.
-* **jwt-decode**: `^4.0.0` - A library for decoding JSON Web Tokens.
-* **moment**: `^2.30.1` - A library for working with dates and times.
-* **react-dom**: `^18.2.0` - A library for rendering React components to the DOM.
-* **react-hook-form**: `^7.56.1` - A library for managing forms in React.
-* **react-icons**: `^5.5.0` - A library for using icons in React.
-* **react-router-dom**: `^7.5.0` - A library for client-side routing in React.
-* **react-spinners**: `^0.17.0` - A library for displaying loading spinners in React.
-* **react-toastify**: `^11.0.5` - A library for displaying toast notifications in React.
-* **react-tsparticles**: `^2.12.2` - A library for displaying particles in React.
-* **tsparticles**: `^3.8.1` - A library for creating particles.
-* **web-vitals**: `^4.2.4` - A library for measuring web performance metrics.
+#### Development Packages
+* **eslint**: A library for linting JavaScript code (installed separately)
 
-### Utilities
+### Security & Version Assessment
+The following packages have potential security risks or are deprecated:
 
-* **cors**: `^2.8.5` - A library for enabling CORS in Express.js.
-* **framer-motion**: `^12.9.4` - A library for animating components in React.
-* **lottie-react**: `^2.4.1` - A library for playing Lottie animations in React.
-* **rect**: `^1.2.1` - A library for working with rectangles.
-* **toast**: `^0.5.4` - A library for displaying toast notifications.
+* **moment**: This package is deprecated and has known security vulnerabilities. Consider replacing it with a more modern alternative like **dayjs**.
+* **cors**: This package has known security vulnerabilities. Make sure to keep it up to date and use it with caution.
+* **jwt-decode**: This package has known security vulnerabilities. Make sure to keep it up to date and use it with caution.
 
-### Development Packages
+The following packages have major version changes:
 
-* **@eslint/js**: `^9.21.0` - A library for linting JavaScript code.
-* **@types/react-dom**: `^19.0.4` - Type definitions for React DOM.
-* **@vitejs/plugin-react**: `^4.3.4` - A Vite plugin for React.
-* **autoprefixer**: `^10.4.21` - A library for adding vendor prefixes to CSS.
-* **eslint**: `^9.21.0` - A library for linting code.
-* **eslint-plugin-react-hooks**: `^5.1.0` - A library for linting React hooks.
-* **eslint-plugin-react-refresh**: `^0.4.19` - A library for linting React Refresh.
-* **globals**: `^15.15.0` - A library for defining global variables.
-* **postcss**: `^8.5.3` - A library for transforming CSS.
-* **tailwindcss**: `^4.1.3` - A library for styling components with Tailwind CSS.
+* **react**: The project is using React 18, which has significant changes from previous versions. Make sure to review the documentation and update the code accordingly.
+* **react-router-dom**: The project is using React Router DOM 7, which has significant changes from previous versions. Make sure to review the documentation and update the code accordingly.
 
-**Security & Version Assessment**
-------------------------------
+### Environment Setup Requirements
+To set up the environment, follow these steps:
 
-* **axios**: `^1.8.4` - This version is outdated and has known security vulnerabilities. Consider updating to the latest version.
-* **moment**: `^2.30.1` - This library is deprecated and should be replaced with a more modern alternative.
-* **react**: `^18.2.0` - This version is outdated and may have known security vulnerabilities. Consider updating to the latest version.
-* **react-dom**: `^18.2.0` - This version is outdated and may have known security vulnerabilities. Consider updating to the latest version.
+#### 1. Install Node.js and npm
+Make sure you have Node.js and npm installed on your machine. You can download the latest version from the official Node.js website.
 
-**Environment Setup Requirements**
---------------------------------
-
-### Installation Commands
-
-* `npm install` - Install all dependencies listed in `package.json`.
-* `npm install --save-dev` - Install all development dependencies listed in `package.json`.
-
-### Configuration Variables
-
-* `VITE_PORT` - The port number to use for the Vite development server.
-* `VITE_PUBLIC_DIR` - The directory to serve static files from.
-* `VITE_OUT_DIR` - The directory to output compiled files to.
-
-### Setup Instructions
-
-1. Clone the repository and navigate to the project directory.
-2. Run `npm install` to install all dependencies.
-3. Run `npm install --save-dev` to install all development dependencies.
-4. Create a new file called `.env` in the project root and add the following configuration variables:
+#### 2. Install dependencies
+Run the following command in your terminal:
 ```bash
-VITE_PORT=3000
-VITE_PUBLIC_DIR=public
-VITE_OUT_DIR=dist
+npm install
 ```
-5. Run `npm run dev` to start the Vite development server.
-6. Open a web browser and navigate to `http://localhost:3000` to view the application.
+This will install all the dependencies listed in the `package.json` file.
+
+#### 3. Configure environment variables
+The project uses the following environment variables:
+
+* **VITE_PORT**: The port number for the Vite development server. Default value is 3000.
+* **VITE_HOST**: The hostname for the Vite development server. Default value is localhost.
+
+You can configure these variables in a `.env` file or in your operating system's environment variables.
+
+#### 4. Start the development server
+Run the following command in your terminal:
+```bash
+npm run dev
+```
+This will start the Vite development server, and you can access the application at `http://localhost:3000`.
+
+#### 5. Build the application
+Run the following command in your terminal:
+```bash
+npm run build
+```
+This will build the application for production, and you can find the output in the `dist` folder.
+
+#### 6. Preview the application
+Run the following command in your terminal:
+```bash
+npm run preview
+```
+This will start a preview server, and you can access the application at `http://localhost:3000`.

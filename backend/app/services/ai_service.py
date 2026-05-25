@@ -3,65 +3,70 @@ AI Documentation Generation Service.
 Uses LangChain + NVIDIA API (ChatNVIDIA) to generate, update, and summarize technical documentation.
 """
 
-import requests
+import asyncio
 from typing import Optional
+from groq import Groq
 from app.core.config import settings
 
 
 class AIDocService:
-    """Wraps NVIDIA API calls for documentation tasks via LangChain ChatNVIDIA."""
+    """Wraps Groq API calls for documentation tasks."""
 
     def __init__(self):
-        self.api_key = settings.NVIDIA_API_KEY
+        self.api_key = settings.GROQ_API_KEY
         self.model = settings.AI_MODEL
-        self.invoke_url = "https://integrate.api.nvidia.com/v1/chat/completions"
-        self._llm = None
+        self._client = None
 
-    def _get_llm(self):
-        """Lazy-init LangChain ChatNVIDIA model."""
-        if self._llm is None:
-            try:
-                from langchain_nvidia_ai_endpoints import ChatNVIDIA
-                self._llm = ChatNVIDIA(
-                    model=self.model,
-                    api_key=self.api_key,
-                    temperature=0.20,
-                    top_p=0.70,
-                    max_tokens=settings.AI_MAX_TOKENS,
-                )
-            except Exception:
-                # Fallback: use raw API if langchain-nvidia not available
-                self._llm = None
-        return self._llm
+    def _get_client(self):
+        """Lazy-init Groq client."""
+        if self._client is None:
+            self._client = Groq(api_key=self.api_key)
+        return self._client
 
     def _call_llm(self, prompt: str) -> str:
-        """Call LLM — tries LangChain ChatNVIDIA first, falls back to raw REST."""
-        llm = self._get_llm()
-        if llm is not None:
-            try:
-                from langchain_core.messages import HumanMessage
-                response = llm.invoke([HumanMessage(content=prompt)])
-                return response.content
-            except Exception:
-                pass  # Fall through to raw API
+        """Call LLM — uses Groq API client with fallback models and retry logic on rate limits."""
+        client = self._get_client()
+        
+        # Try configured model first, then fallbacks with higher daily quotas
+        models_to_try = [self.model, "llama-3.1-8b-instant", "gemma2-9b-it", "mixtral-8x7b-32768"]
+        # Remove duplicates while preserving order
+        models_to_try = list(dict.fromkeys(models_to_try))
+        
+        last_error = None
+        for current_model in models_to_try:
+            for attempt in range(3):
+                try:
+                    completion = client.chat.completions.create(
+                        model=current_model,
+                        messages=[
+                            {"role": "user", "content": prompt}
+                        ],
+                        temperature=0.20,
+                        max_completion_tokens=settings.AI_MAX_TOKENS,
+                        top_p=0.70,
+                        stream=False
+                    )
+                    return completion.choices[0].message.content
+                except Exception as e:
+                    last_error = e
+                    err_str = str(e).lower()
+                    if "429" in err_str or "rate limit" in err_str:
+                        if attempt < 2:
+                            import time
+                            time.sleep(2 ** attempt)
+                            continue
+                        else:
+                            print(f"[WARN] Model {current_model} rate limited. Attempting next fallback model...")
+                            break
+                    else:
+                        raise e
+                        
+        raise last_error or Exception("Failed to generate response after trying all fallback models")
 
-        # Fallback: raw REST API call
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Accept": "application/json"
-        }
-        payload = {
-            "model": self.model,
-            "messages": [{"role": "user", "content": prompt}],
-            "max_tokens": settings.AI_MAX_TOKENS,
-            "temperature": 0.20,
-            "top_p": 0.70,
-            "stream": False
-        }
-        response = requests.post(self.invoke_url, headers=headers, json=payload)
-        response.raise_for_status()
-        data = response.json()
-        return data["choices"][0]["message"]["content"]
+
+    async def _acall_llm(self, prompt: str) -> str:
+        """Async wrapper: runs sync _call_llm in a thread pool to avoid blocking the event loop."""
+        return await asyncio.to_thread(self._call_llm, prompt)
 
     # ------------------------------------------------------------------ #
     #  Codebase Documentation                                             #
@@ -94,7 +99,7 @@ Generate documentation in Markdown with these sections:
 
 Be specific, accurate, and developer-friendly. Use code blocks for examples."""
 
-        content = self._call_llm(prompt)
+        content = await self._acall_llm(prompt)
         summary = await self._generate_summary(content)
 
         return {"markdown": content, "summary": summary}
@@ -128,7 +133,7 @@ Generate documentation in Markdown with:
 
 Format it like Stripe or Twilio docs – developer-first and copy-paste ready."""
 
-        content = self._call_llm(prompt)
+        content = await self._acall_llm(prompt)
         summary = await self._generate_summary(content)
 
         return {"markdown": content, "summary": summary}
@@ -163,7 +168,7 @@ Generate in Markdown:
 6. **Changelog Entry** – A concise, user-facing changelog entry in Keep a Changelog format
 7. **Documentation Updates Needed** – List any docs that should be updated as a result"""
 
-        content = self._call_llm(prompt)
+        content = await self._acall_llm(prompt)
         summary = await self._generate_summary(content)
 
         return {"markdown": content, "summary": summary}
@@ -196,7 +201,7 @@ Generate in Markdown:
 6. **Impact Assessment** – Services affected, expected downtime, performance impact
 7. **On-Call Notes** – What to watch for in the next 24 hours"""
 
-        content = self._call_llm(prompt)
+        content = await self._acall_llm(prompt)
         summary = await self._generate_summary(content)
 
         return {"markdown": content, "summary": summary}
@@ -225,7 +230,7 @@ Respond in Markdown:
 4. **Severity** – Rate each issue: Critical / High / Medium / Low
 5. **Updated Documentation** – The fully corrected documentation"""
 
-        content = self._call_llm(prompt)
+        content = await self._acall_llm(prompt)
         return {"markdown": content, "has_changes": True}
 
     # ------------------------------------------------------------------ #
@@ -239,7 +244,7 @@ Respond in Markdown:
         original_max = settings.AI_MAX_TOKENS
         settings.AI_MAX_TOKENS = 200
         try:
-            return self._call_llm(prompt)
+            return await self._acall_llm(prompt)
         finally:
             settings.AI_MAX_TOKENS = original_max
 
@@ -266,7 +271,7 @@ Please generate a high-level overview in Markdown format containing:
 
 Make it clean, detailed, and highly technical."""
 
-        content = self._call_llm(prompt)
+        content = await self._acall_llm(prompt)
         summary = await self._generate_summary(content)
         return {"markdown": content, "summary": summary}
 
@@ -293,7 +298,7 @@ Generate a Markdown document with:
 
 Make the architecture document descriptive, formal, and visual."""
 
-        content = self._call_llm(prompt)
+        content = await self._acall_llm(prompt)
         summary = await self._generate_summary(content)
         return {"markdown": content, "summary": summary}
 
@@ -310,7 +315,7 @@ User's Question:
 
 Provide a clear, detailed, and accurate answer. If the context contains specific filenames, functions, config keys, or code snippets, reference them in your answer. If you cannot answer based on the context, politely explain what information is missing. Keep your explanation developer-friendly and helpful."""
 
-        return self._call_llm(prompt)
+        return await self._acall_llm(prompt)
 
     async def generate_dependency_analysis(self, dependency_files_content: str) -> dict:
         """Generate documentation analyzing external dependencies and packages."""
@@ -327,7 +332,7 @@ Please generate a Markdown guide containing:
 
 Make it clean, clear, and actionable for onboarding developers."""
 
-        content = self._call_llm(prompt)
+        content = await self._acall_llm(prompt)
         summary = await self._generate_summary(content)
         return {"markdown": content, "summary": summary}
 

@@ -2,13 +2,14 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, FolderGit2, BookOpen, MessageSquare, Settings } from 'lucide-react';
+import { Home, FolderGit2, BookOpen, MessageSquare, Settings, GitPullRequest } from 'lucide-react';
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: Home },
   { name: 'Repositories', href: '/repositories', icon: FolderGit2 },
   { name: 'API Docs', href: '/api-docs', icon: BookOpen },
   { name: 'Codebase Chat', href: '/chat', icon: MessageSquare },
+  { name: 'Pull Requests', href: '/pull-requests', icon: GitPullRequest },
 ];
 
 export default function Sidebar() {

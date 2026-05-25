@@ -1,84 +1,51 @@
-**Reset Password Module**
-==========================
+**ResetPassword Component Documentation**
+=====================================
 
-**Overview**
-------------
+### 1. Overview
 
-The `ResetPassword` module is a React component responsible for handling password reset functionality. It takes a token from the URL query parameter, validates it, and allows the user to enter a new password. Upon successful validation and submission, it sends a request to the backend to reset the password.
+The `ResetPassword` component is a React functional component that handles password reset functionality. It is part of the authentication module and plays a crucial role in allowing users to reset their passwords. The component is responsible for validating a password reset token, handling form submission, and communicating with the backend API to reset the user's password.
 
-**Functions/Classes**
----------------------
+### 2. Functions/Classes
 
-### `ResetPassword` Component
+The `ResetPassword` component uses several state variables and functions to manage its behavior. The main functions are:
 
-* **Signature:** `const ResetPassword = () => { ... }`
-* **Parameters:** None
-* **Return Value:** A React component
-* **Usage Example:**
-
-```jsx
-import React from 'react';
-import ResetPassword from './ResetPassword';
-
-const App = () => {
-  return (
-    <div>
-      <ResetPassword />
-    </div>
-  );
+* `handleSubmit`: Handles form submission and sends a request to the backend API to reset the user's password.
+	+ Signature: `async (e: React.FormEvent<HTMLFormElement>) => void`
+	+ Parameters: `e` - the form submission event
+	+ Return Value: None
+	+ Usage Example:
+	```javascript
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  // Handle form submission logic
 };
 ```
-
-### `handleSubmit` Function
-
-* **Signature:** `const handleSubmit = async (e) => { ... }`
-* **Parameters:**
-	+ `e`: The form submission event
-* **Return Value:** None
-* **Usage Example:**
-
-```jsx
-// This function is called when the form is submitted
-<form onSubmit={handleSubmit}>
-  {/* form fields */}
-</form>
-```
-
-### `useEffect` Hook
-
-* **Signature:** `useEffect(() => { ... }, [token])`
-* **Parameters:**
-	+ `token`: The token from the URL query parameter
-* **Return Value:** None
-* **Usage Example:**
-
-```jsx
-// This hook is called when the token changes
+* `useEffect`: Validates the password reset token when the component mounts.
+	+ Signature: `(effect: () => void, deps: DependencyList) => void`
+	+ Parameters: `effect` - the function to run when the component mounts, `deps` - the dependencies for the effect
+	+ Return Value: None
+	+ Usage Example:
+	```javascript
 useEffect(() => {
-  // Simulate token validation or generation
-  if (!token) {
-    setMessage("Token is missing or invalid.");
-    setTokenLoading(false);
-    return;
-  }
-  // ...
+  // Validate token logic
 }, [token]);
 ```
 
-**Dependencies**
-----------------
+### 3. Dependencies
 
-* `react`: For building the React component
-* `react-router-dom`: For accessing the URL query parameter and navigating to other routes
-* `api`: For making requests to the backend API
-* `import.meta.env.VITE_BACKEND_DOMAIN`: For accessing the backend domain URL
+The `ResetPassword` component depends on the following external imports:
 
-**Usage Examples**
------------------
+* `react`: The React library for building user interfaces.
+* `api`: The API service for making requests to the backend API.
+* `useLocation` and `useNavigate` from `react-router-dom`: For accessing the current location and navigating to other routes.
+* `import.meta.env.VITE_BACKEND_DOMAIN`: The backend domain URL for making API requests.
 
-### Basic Usage
+These dependencies are used to handle form submission, validate the password reset token, and communicate with the backend API.
 
-```jsx
+### 4. Usage Examples
+
+To use the `ResetPassword` component, simply import it and render it in your React application:
+```javascript
 import React from 'react';
 import ResetPassword from './ResetPassword';
 
@@ -90,31 +57,13 @@ const App = () => {
   );
 };
 ```
+You can also customize the component by passing props to it. However, the `ResetPassword` component does not currently accept any props.
 
-### Customizing the Backend Domain
+### 5. Edge Cases & Warnings
 
-```jsx
-// In your .env file
-VITE_BACKEND_DOMAIN=https://example.com/api
+* **Token Validation**: The component assumes that the password reset token is passed as a query parameter in the URL. If the token is missing or invalid, the component will display an error message.
+* **Backend API Errors**: If the backend API returns an error when resetting the password, the component will display an error message to the user.
+* **Loading State**: The component uses a loading state to prevent multiple form submissions while the password is being reset. However, if the loading state is not properly reset, the component may become stuck in a loading state.
+* **Security**: The component uses a simple token validation mechanism to prevent unauthorized password resets. However, this mechanism may not be sufficient for production environments, and additional security measures should be implemented to prevent password reset abuse.
 
-// In your code
-import React from 'react';
-import ResetPassword from './ResetPassword';
-
-const App = () => {
-  return (
-    <div>
-      <ResetPassword />
-    </div>
-  );
-};
-```
-
-**Edge Cases & Warnings**
--------------------------
-
-* Make sure to handle errors properly when making requests to the backend API.
-* The `token` parameter is required for the password reset functionality to work.
-* The `newPassword` field is required for the form submission to work.
-* The `loading` state is used to disable the form fields and button while the request is being processed.
-* The `tokenLoading` state is used to display a loading indicator while the token is being validated.
+By understanding these edge cases and warnings, developers can use the `ResetPassword` component effectively and securely in their React applications.

@@ -51,6 +51,22 @@ async def init_db():
                 except Exception as e:
                     print(f"Error migrating column {col_name}: {e}")
         
+        # Clean up stale scanning projects on startup
+        try:
+            await conn.execute(text(
+                "UPDATE projects "
+                "SET status = 'failed', agent_phase = 'Interrupted', "
+                "agent_log = COALESCE(agent_log, '') || chr(10) || '[SYSTEM] Scan aborted: Server was restarted/interrupted.' || chr(10) "
+                "WHERE status = 'scanning'"
+            ))
+            await conn.execute(text(
+                "UPDATE repo_scans "
+                "SET status = 'failed' "
+                "WHERE status = 'scanning'"
+            ))
+        except Exception as e:
+            print(f"Error cleaning up stale projects: {e}")
+        
 
 
 
