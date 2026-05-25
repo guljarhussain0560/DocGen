@@ -66,6 +66,29 @@ export default function RepositoryDetails() {
   const [isLoadingCommits, setIsLoadingCommits] = useState(false);
   const [commitsError, setCommitsError] = useState<string | null>(null);
 
+  const [sidebarWidth, setSidebarWidth] = useState(256);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const startWidth = sidebarWidth;
+    const startX = e.clientX;
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      const newWidth = startWidth + (moveEvent.clientX - startX);
+      if (newWidth > 180 && newWidth < 600) {
+        setSidebarWidth(newWidth);
+      }
+    };
+
+    const handleMouseUp = () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  };
+
   useEffect(() => {
     const fetchDetails = async () => {
       setIsMounted(true);
@@ -271,10 +294,13 @@ export default function RepositoryDetails() {
         </div>
       </header>
 
-      <div className="flex-1 flex gap-4 overflow-hidden">
+      <div className="flex-1 flex gap-2 overflow-hidden">
         {/* Sidebar: Document List */}
-        <div className="w-64 tech-panel flex flex-col shadow-lg overflow-y-auto">
-          <div className="p-3 border-b border-[#30363d] bg-[#161b22] sticky top-0 font-semibold text-[#8b949e]">
+        <div 
+          style={{ width: `${sidebarWidth}px` }}
+          className="tech-panel flex flex-col shadow-lg overflow-y-auto shrink-0"
+        >
+          <div className="p-3 border-b border-[#30363d] bg-[#161b22] sticky top-0 font-semibold text-[#8b949e] select-none">
             Documents ({project.docs?.length || 0})
           </div>
           <div className="flex-1">
@@ -286,6 +312,7 @@ export default function RepositoryDetails() {
                   <li 
                     key={doc.id}
                     onClick={() => setActiveDocId(doc.id)}
+                    title={doc.title}
                     className={`p-3 cursor-pointer transition-colors flex items-start gap-2 ${
                       activeDocId === doc.id ? 'bg-[#1f2428] border-l-2 border-[#58a6ff]' : 'hover:bg-[#161b22] border-l-2 border-transparent'
                     }`}
@@ -303,6 +330,13 @@ export default function RepositoryDetails() {
             )}
           </div>
         </div>
+
+        {/* Drag handle resize divider */}
+        <div 
+          onMouseDown={handleMouseDown}
+          className="w-1 hover:w-1.5 active:w-1.5 cursor-col-resize bg-[#30363d] hover:bg-[#58a6ff] active:bg-[#58a6ff] transition-all self-stretch shrink-0 rounded"
+          title="Drag to resize documents list panel"
+        />
 
         {/* Main Content: Markdown Viewer */}
         <div className="flex-1 tech-panel flex flex-col shadow-lg overflow-hidden bg-[#0d1117]">
