@@ -28,8 +28,8 @@ DocGen is structured as a decoupled monorepo:
 ## Quick Start (Run Both Components)
 
 For detailed information on configuring and running each component individually, see their dedicated readmes:
-* 💻 **[Frontend Setup & Configuration](file:///c:/Downloads/DocGen/frontend/README.md)**
-* 🧠 **[Backend Setup & Configuration](file:///c:/Downloads/DocGen/backend/README.md)**
+* 💻 **[Frontend Setup & Configuration](./frontend/README.md)**
+* 🧠 **[Backend Setup & Configuration](./backend/README.md)**
 
 ### Option A: Run Locally
 
